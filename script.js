@@ -218,6 +218,43 @@ function setupEventListeners() {
         document.getElementById('input-qty-proposal').value = '';
     });
 
+    // Print Purchase List
+    document.getElementById('btn-print-purchase').addEventListener('click', () => {
+        if (proposalItems.length === 0) {
+            alert("Please add items to your proposal first.");
+            return;
+        }
+
+        const printBody = document.getElementById('purchase-list-body');
+        printBody.innerHTML = '';
+        let index = 1;
+
+        proposalItems.forEach(pItem => {
+            const master = masterList.find(m => m.id === pItem.item_id);
+            if (!master) return;
+
+            printBody.innerHTML += `
+                <tr>
+                    <td style="border: 1px solid #ccc; padding: 10px; color:#000; text-align:center;">${index++}</td>
+                    <td style="border: 1px solid #ccc; padding: 10px; color:#000; text-align:left;">${master.name}</td>
+                    <td style="border: 1px solid #ccc; padding: 10px; color:#000; text-align:center;">${pItem.qty}</td>
+                    <td style="border: 1px solid #ccc; padding: 10px; color:#000; text-align:right;"></td>
+                    <td style="border: 1px solid #ccc; padding: 10px; color:#000; text-align:right;"></td>
+                </tr>
+            `;
+        });
+
+        // Hide main app views and show print container
+        document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+        document.getElementById('print-purchase-container').style.display = 'block';
+
+        window.print();
+
+        // Restore view after printing
+        document.getElementById('print-purchase-container').style.display = 'none';
+        document.getElementById('view-proposal').classList.remove('hidden');
+    });
+
     // Generate Quotes
     document.getElementById('btn-generate').addEventListener('click', () => {
         if (proposalItems.length === 0) {

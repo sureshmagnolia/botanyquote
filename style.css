@@ -478,7 +478,7 @@ select option {
         all: unset !important;
     }
 
-    #view-quotes {
+    #view-quotes:not(.hidden) {
         display: block !important;
         padding: 0;
     }

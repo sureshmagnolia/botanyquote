@@ -58,7 +58,11 @@
                         <h1>Current Proposal Build</h1>
                         <p style="color: #94a3b8; margin-top: 5px;">Compile items to generate 3 distinct quotes</p>
                     </div>
-                    <button id="btn-generate" class="btn generate">⚡ Generate 3 Quotes</button>
+                    <div>
+                        <button id="btn-print-purchase" class="btn secondary" style="margin-right: 15px;">🖨️ Print for
+                            Purchase</button>
+                        <button id="btn-generate" class="btn generate">⚡ Generate 3 Quotes</button>
+                    </div>
                 </header>
 
                 <div class="selection-pane glass-panel" style="margin-bottom: 30px; padding: 20px;">
@@ -92,6 +96,37 @@
                     </table>
                 </div>
             </section>
+
+            <!-- Purchase List Print View (Hidden normally, shown only via JS for printing) -->
+            <div id="print-purchase-container" style="display: none;">
+                <h1 style="text-align:center; border-bottom: 2px solid #333; padding-bottom: 10px; color:#000;">
+                    Requirements List for Quotation</h1>
+                <p style="text-align:center; color:#555; margin-bottom: 30px;">Please provide your best rates for the
+                    following items.</p>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th
+                                style="border: 1px solid #ccc; padding: 10px; color:#000; background:#f9f9f9; text-align:center;">
+                                S.No</th>
+                            <th
+                                style="border: 1px solid #ccc; padding: 10px; color:#000; background:#f9f9f9; text-align:left;">
+                                Item Description</th>
+                            <th
+                                style="border: 1px solid #ccc; padding: 10px; color:#000; background:#f9f9f9; text-align:center;">
+                                Quantity Required</th>
+                            <th
+                                style="border: 1px solid #ccc; padding: 10px; color:#000; background:#f9f9f9; text-align:right;">
+                                Rate / Unit</th>
+                            <th
+                                style="border: 1px solid #ccc; padding: 10px; color:#000; background:#f9f9f9; text-align:right;">
+                                Total Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="purchase-list-body">
+                    </tbody>
+                </table>
+            </div>
 
             <!-- Settings View -->
             <section id="view-settings" class="view hidden">
