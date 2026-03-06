@@ -302,8 +302,8 @@ function generateQuotes() {
             const master = masterList.find(m => m.id === pItem.item_id);
             if (!master) return;
 
-            // Generate a 'different rate' based on variance and round it up to nearest 10
-            let specificRate = Math.round((master.rate * supplierVariance()) / 10) * 10;
+            // Generate a 'different rate' based on variance and round it up to nearest whole number
+            let specificRate = Math.ceil(master.rate * supplierVariance());
             const amount = specificRate * pItem.qty;
             total += amount;
 
