@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Botanical Specimen Quotations</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 
 <body>
@@ -15,10 +16,16 @@
             <h2>LeafyQuotes</h2>
             <ul>
                 <li class="active" data-view="master-list">🌿 Master List</li>
-                <li data-view="proposal">📝 Build Proposal</li>
                 <li data-view="settings">⚙️ Quote Config</li>
-                <li data-view="quotes" id="nav-quotes" class="disabled">📄 View Quotes</li>
+                <li data-view="proposal">📝 Build Proposal</li>
             </ul>
+            <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid var(--glass-border);">
+                <button id="btn-export-json" class="btn secondary"
+                    style="width: 100%; margin-bottom: 10px; text-align: left;">💾 Export All Data</button>
+                <button id="btn-import-json-trigger" class="btn secondary" style="width: 100%; text-align: left;">📂
+                    Import Data</button>
+                <input type="file" id="input-import-json" accept=".json" style="display: none;">
+            </div>
         </nav>
 
         <!-- Main Content Area -->
@@ -34,6 +41,24 @@
                     </div>
                     <button id="btn-add-item" class="btn primary">+ Add New Item</button>
                 </header>
+
+                <div class="selection-pane glass-panel"
+                    style="margin-bottom: 20px; padding: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <h4 style="margin: 0 0 5px 0; color: #cbd5e1;">Bulk Base Rate Adjustment</h4>
+                        <p style="margin: 0; font-size: 0.8em; color: #94a3b8;">Modify all Master List prices instantly
+                        </p>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="number" id="input-bulk-rate-mod" placeholder="e.g. 5 or -10" style="width: 120px;"
+                            title="Positive to increase, Negative to decrease">
+                        <span style="color: #cbd5e1;">%</span>
+                        <button id="btn-apply-bulk-rate" class="btn generate"
+                            style="padding: 8px 15px; font-size: 0.9em; background: linear-gradient(135deg, #10b981, #059669); border: none;">Apply
+                            to All</button>
+                    </div>
+                </div>
+
                 <div class="table-container">
                     <table id="table-master">
                         <thead>
@@ -58,10 +83,20 @@
                         <h1>Current Proposal Build</h1>
                         <p style="color: #94a3b8; margin-top: 5px;">Compile items to generate 3 distinct quotes</p>
                     </div>
-                    <div>
-                        <button id="btn-print-purchase" class="btn secondary" style="margin-right: 15px;">🖨️ Print for
-                            Purchase</button>
-                        <button id="btn-generate" class="btn generate">⚡ Generate 3 Quotes</button>
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;">
+                        <button id="btn-print-purchase" class="btn secondary">🖨️ Print for Purchase</button>
+                        <button id="btn-pdf-purchase" class="btn secondary">📥 PDF for Purchase</button>
+                        <div style="display: inline-flex; gap: 10px; flex-wrap: wrap; margin-left: auto;">
+                            <button id="btn-gen-q1" class="btn generate"
+                                style="background: linear-gradient(135deg, #0284c7, #0369a1); border: none;">📄 PDF
+                                Quote 1</button>
+                            <button id="btn-gen-q2" class="btn generate"
+                                style="background: linear-gradient(135deg, #78350f, #451a03); border: none;">📄 PDF
+                                Quote 2</button>
+                            <button id="btn-gen-q3" class="btn generate"
+                                style="background: linear-gradient(135deg, #15803d, #14532d); border: none;">📄 PDF
+                                Quote 3</button>
+                        </div>
                     </div>
                 </header>
 
@@ -69,8 +104,13 @@
                     <div
                         style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                         <h3 style="margin: 0;">Add Item to Proposal</h3>
-                        <button id="btn-add-all-proposal" class="btn primary"
-                            style="padding: 6px 12px; font-size: 0.9em;">+ Add ALL Master Items</button>
+                        <div>
+                            <button id="btn-clear-proposal" class="btn danger"
+                                style="padding: 6px 12px; font-size: 0.9em; margin-right: 10px;">🗑️ Clear
+                                Proposal</button>
+                            <button id="btn-add-all-proposal" class="btn primary"
+                                style="padding: 6px 12px; font-size: 0.9em;">+ Add ALL Master Items</button>
+                        </div>
                     </div>
                     <div class="add-form">
                         <select id="select-item-proposal" style="flex: 2;"></select>
@@ -99,11 +139,7 @@
 
             <!-- Purchase List Print View (Hidden normally, shown only via JS for printing) -->
             <div id="print-purchase-container" style="display: none;">
-                <h1 style="text-align:center; border-bottom: 2px solid #333; padding-bottom: 10px; color:#000;">
-                    Requirements List for Quotation</h1>
-                <p style="text-align:center; color:#555; margin-bottom: 30px;">Please provide your best rates for the
-                    following items.</p>
-                <table style="width: 100%; border-collapse: collapse;">
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
                     <thead>
                         <tr>
                             <th
@@ -126,6 +162,11 @@
                     <tbody id="purchase-list-body">
                     </tbody>
                 </table>
+                <h1
+                    style="text-align:center; border-bottom: 2px solid #333; padding-bottom: 10px; color:#000; margin-top: 40px;">
+                    Requirements List for Quotation</h1>
+                <p style="text-align:center; color:#555; margin-bottom: 30px;">Please provide your best rates for the
+                    following items.</p>
             </div>
 
             <!-- Settings View -->
@@ -208,27 +249,6 @@
                         <p style="font-size:0.8em; color:#64748b; margin-top:5px;">e.g., 10 for +10% over master</p>
                     </div>
                 </div>
-            </section>
-
-            <!-- Quotes View -->
-            <section id="view-quotes" class="view hidden">
-                <header>
-                    <div>
-                        <h1>Generated Quotations</h1>
-                        <p style="color: #94a3b8; margin-top: 5px;">3 quotes from 3 different entities with unique
-                            styles</p>
-                    </div>
-                    <button class="btn secondary" onclick="window.print()">🖨️ Print All</button>
-                </header>
-                <div class="quotes-container">
-                    <!-- Quote 1 -->
-                    <div class="quote-document quote-style-1" id="quote-1"></div>
-                    <!-- Quote 2 -->
-                    <div class="quote-document quote-style-2" id="quote-2"></div>
-                    <!-- Quote 3 -->
-                    <div class="quote-document quote-style-3" id="quote-3"></div>
-                </div>
-            </section>
         </main>
     </div>
 
@@ -260,6 +280,27 @@
                 <button id="btn-save-item" class="btn primary">Save Item</button>
             </div>
         </div>
+    </div>
+
+    <!-- PDF Generation Loader Overlay -->
+    <div id="pdf-loader" class="modal hidden"
+        style="z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.85);">
+        <div class="loader-spinner"
+            style="border: 6px solid #1e293b; border-top: 6px solid #3b82f6; border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; margin-bottom: 20px;">
+        </div>
+        <h2 style="color: white; font-weight: normal; margin: 0;">Generating PDF Document...</h2>
+        <p style="color: #94a3b8; font-size: 0.9em; margin-top: 10px;">Please wait while the file is processed.</p>
+        <style>
+            @keyframes spin {
+                0% {
+                    transform: rotate(0deg);
+                }
+
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+        </style>
     </div>
 
     <script src="script.js"></script>
