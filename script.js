@@ -264,7 +264,13 @@ function setupEventListeners() {
             else if (cat.includes('msc')) { addQty = parseInt(quoteSettings.msc) || 18; }
 
             const existing = proposalItems.find(p => p.item_id === m.id);
-            if (existing) { existing.qty += addQty; }
+            if (existing) { 
+                if (cat.includes('bsc') || cat.includes('msc')) {
+                    existing.qty = addQty;
+                } else {
+                    existing.qty += addQty;
+                }
+            }
             else { proposalItems.push({ item_id: m.id, qty: addQty }); }
         });
         saveProposalList();
@@ -283,15 +289,23 @@ function setupEventListeners() {
 
         if (isNaN(qty) || qty < 1) {
             qty = 1; // Default
-            if (m && m.category) {
-                const cat = String(m.category).toLowerCase();
-                if (cat.includes('bsc')) { qty = parseInt(quoteSettings.bsc) || 42; }
-                else if (cat.includes('msc')) { qty = parseInt(quoteSettings.msc) || 18; }
-            }
+        }
+        
+        if (m && m.category) {
+            const cat = String(m.category).toLowerCase();
+            if (cat.includes('bsc')) { qty = parseInt(quoteSettings.bsc) || 42; }
+            else if (cat.includes('msc')) { qty = parseInt(quoteSettings.msc) || 18; }
         }
 
         const existing = proposalItems.find(p => p.item_id === itemId);
-        if (existing) { existing.qty += qty; }
+        if (existing) { 
+            const cat = m && m.category ? String(m.category).toLowerCase() : '';
+            if (cat.includes('bsc') || cat.includes('msc')) {
+                existing.qty = qty; 
+            } else {
+                existing.qty += qty; 
+            }
+        }
         else { proposalItems.push({ item_id: itemId, qty: qty }); }
 
         saveProposalList();
@@ -376,6 +390,73 @@ function setupEventListeners() {
                     <span style="margin-right: 20px;">Grand Total:</span>
                     <span>₹${total.toLocaleString('en-IN')}</span>
                 </div>
+                <script>
+                    window.onload = function() { window.print(); }
+                </script>
+            </body>
+            </html>
+        `;
+
+        printWindow.document.open();
+        printWindow.document.write(printHtml);
+        printWindow.document.close();
+    });
+
+    // Print List for Intend
+    document.getElementById('btn-print-intend').addEventListener('click', () => {
+        if (proposalItems.length === 0) {
+            alert("Please add items to your proposal first.");
+            return;
+        }
+
+        let printWindow = window.open('', '_blank');
+
+        let printHtml = `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <title>Requirements List for Intend</title>
+                <style>
+                    body { font-family: 'Inter', sans-serif; padding: 20px; color: #000; background: #fff; }
+                    table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+                    th, td { border: 1px solid #000; padding: 10px; color: #000; }
+                    th { font-weight: bold; background: #f9f9f9; }
+                    h1 { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-top: 40px; }
+                    p { text-align: center; color: #555; margin-bottom: 30px; }
+                </style>
+            </head>
+            <body>
+                <h1>Requirements Specimen List for Intend</h1>
+                <p>List of required botanical items and quantities.</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="text-align:center;">Sl. No</th>
+                            <th style="text-align:left;">Item Name</th>
+                            <th style="text-align:center;">Numbers</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        let index = 1;
+        proposalItems.forEach(pItem => {
+            const master = masterList.find(m => m.id === pItem.item_id);
+            if (!master) return;
+
+            printHtml += `
+                <tr>
+                    <td style="text-align:center; width: 10%;">${index++}</td>
+                    <td style="text-align:left; width: 60%;">${master.name}</td>
+                    <td style="text-align:center; width: 30%;">${pItem.qty}</td>
+                </tr>
+            `;
+        });
+
+        printHtml += `
+                    </tbody>
+                </table>
                 <script>
                     window.onload = function() { window.print(); }
                 </script>
