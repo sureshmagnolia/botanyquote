@@ -233,13 +233,16 @@ function setupEventListeners() {
             const master = masterList.find(m => m.id === pItem.item_id);
             if (!master) return;
 
+            const rate = master.rate;
+            const amount = rate * pItem.qty;
+
             printBody.innerHTML += `
                 <tr>
-                    <td style="border: 1px solid #ccc; padding: 10px; color:#000; text-align:center;">${index++}</td>
-                    <td style="border: 1px solid #ccc; padding: 10px; color:#000; text-align:left;">${master.name}</td>
-                    <td style="border: 1px solid #ccc; padding: 10px; color:#000; text-align:center;">${pItem.qty}</td>
-                    <td style="border: 1px solid #ccc; padding: 10px; color:#000; text-align:right;"></td>
-                    <td style="border: 1px solid #ccc; padding: 10px; color:#000; text-align:right;"></td>
+                    <td style="border: 1px solid #000; padding: 10px; color:#000; text-align:center;">${index++}</td>
+                    <td style="border: 1px solid #000; padding: 10px; color:#000; text-align:left;">${master.name}</td>
+                    <td style="border: 1px solid #000; padding: 10px; color:#000; text-align:right;">${rate.toLocaleString('en-IN')}</td>
+                    <td style="border: 1px solid #000; padding: 10px; color:#000; text-align:center;">${pItem.qty}</td>
+                    <td style="border: 1px solid #000; padding: 10px; color:#000; text-align:right;">${amount.toLocaleString('en-IN')}</td>
                 </tr>
             `;
         });
