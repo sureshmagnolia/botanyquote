@@ -185,7 +185,10 @@ function setupEventListeners() {
 
         if (confirm(`Are you sure you want to apply a ${percent}% adjustment to all master list items?`)) {
             masterList.forEach(m => {
-                m.rate = Math.ceil(m.rate * (1 + (percent / 100)));
+                let currentRate = parseFloat(m.rate);
+                let adjustment = currentRate * (percent / 100);
+                m.rate = Math.round(currentRate + adjustment);
+                if (m.rate < 0) m.rate = 0; // Prevent negative prices
             });
             saveMasterList();
             renderMasterList();
@@ -346,12 +349,14 @@ function setupEventListeners() {
         `;
 
         let index = 1;
+        let total = 0;
         proposalItems.forEach(pItem => {
             const master = masterList.find(m => m.id === pItem.item_id);
             if (!master) return;
 
             const rate = master.rate;
             const amount = rate * pItem.qty;
+            total += amount;
 
             printHtml += `
                 <tr>
@@ -367,6 +372,10 @@ function setupEventListeners() {
         printHtml += `
                     </tbody>
                 </table>
+                <div style="font-weight: bold; background-color: #f9f9f9; padding: 10px; border: 1px solid #000; border-top: none; text-align: right; page-break-inside: avoid;">
+                    <span style="margin-right: 20px;">Grand Total:</span>
+                    <span>₹${total.toLocaleString('en-IN')}</span>
+                </div>
                 <script>
                     window.onload = function() { window.print(); }
                 </script>
@@ -428,13 +437,11 @@ function setupEventListeners() {
                         <tbody>
                             ${rowsHtml}
                         </tbody>
-                        <tfoot>
-                            <tr style="font-weight: bold; background-color: #f3f4f6; page-break-inside: avoid;">
-                                <td colspan="4" style="text-align:right; padding: 10px; border: 1px solid #000;">Grand Total:</td>
-                                <td style="text-align:right; padding: 10px; border: 1px solid #000;">₹${total.toLocaleString('en-IN')}</td>
-                            </tr>
-                        </tfoot>
                     </table>
+                    <div style="font-weight: bold; background-color: #f3f4f6; padding: 10px; border: 1px solid #000; border-top: none; text-align: right; page-break-inside: avoid;">
+                        <span style="margin-right: 20px;">Grand Total:</span>
+                        <span>₹${total.toLocaleString('en-IN')}</span>
+                    </div>
                 </div>
             `;
 
