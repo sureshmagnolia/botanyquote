@@ -376,24 +376,65 @@ function setupEventListeners() {
         const ratio = targetTotal / currentTotal;
 
         if (mode === 'rates') {
+            let newTotal = 0;
+            // Base pass: Use floor to guarantee we don't exceed the target ratio initially
             proposalItems.forEach(pItem => {
                 const master = masterList.find(m => m.id === pItem.item_id);
                 if (master) {
-                    master.rate = Math.max(1, Math.round(master.rate * ratio));
+                    master.rate = Math.max(1, Math.floor(master.rate * ratio));
+                    newTotal += master.rate * pItem.qty;
                 }
             });
+            
+            let diff = targetTotal - newTotal;
+            let added = true;
+            // Fine-tuning pass: Distribute the remainder iteratively
+            while (added && diff > 0) {
+                added = false;
+                for (let pItem of proposalItems) {
+                    const master = masterList.find(m => m.id === pItem.item_id);
+                    // Add 1 to the rate if the resulting increase in total (1 * qty) doesn't exceed the remaining diff
+                    if (master && pItem.qty <= diff) {
+                        master.rate += 1;
+                        diff -= pItem.qty;
+                        added = true;
+                    }
+                }
+            }
             saveMasterList();
         } else if (mode === 'numbers') {
+            let newTotal = 0;
+            // Base pass: Use floor to guarantee we don't exceed the target ratio initially
             proposalItems.forEach(pItem => {
-                pItem.qty = Math.max(1, Math.round(pItem.qty * ratio));
+                const master = masterList.find(m => m.id === pItem.item_id);
+                if (master) {
+                    pItem.qty = Math.max(1, Math.floor(pItem.qty * ratio));
+                    newTotal += pItem.qty * master.rate;
+                }
             });
+            
+            let diff = targetTotal - newTotal;
+            let added = true;
+            // Fine-tuning pass: Distribute the remainder iteratively
+            while (added && diff > 0) {
+                added = false;
+                for (let pItem of proposalItems) {
+                    const master = masterList.find(m => m.id === pItem.item_id);
+                    // Add 1 to the qty if the resulting increase in total (1 * rate) doesn't exceed the remaining diff
+                    if (master && master.rate <= diff) {
+                        pItem.qty += 1;
+                        diff -= master.rate;
+                        added = true;
+                    }
+                }
+            }
             saveProposalList();
         }
 
         renderMasterList();
         renderProposalList();
         document.getElementById('input-target-total').value = '';
-        alert('Proposal adjusted successfully! Note: Due to rounding, the final total may vary slightly from your exact target.');
+        alert('Proposal adjusted successfully! The final total is fine-tuned to be as near to the target as possible, without exceeding it.');
     });
 
     // Print Purchase List
