@@ -121,6 +121,27 @@
                     </div>
                 </div>
 
+                <div class="selection-pane glass-panel" style="margin-bottom: 30px; padding: 20px;">
+                    <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <div>
+                            <h3 style="margin: 0;">Adjust to Target Total</h3>
+                            <p style="margin: 0; font-size: 0.8em; color: #94a3b8; margin-top: 5px;">Automatically adjust rates or quantities to approximate a specific final amount</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="font-size: 0.9em; color: #cbd5e1;">Current Total:</span><br>
+                            <span id="display-current-total" style="font-size: 1.5em; font-weight: bold; color: #4ade80;">₹0</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <input type="number" id="input-target-total" placeholder="Target Total ₹" style="flex: 1; min-width: 150px; padding: 10px; border-radius: 4px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color: white;">
+                        <select id="select-adjust-mode" style="padding: 10px; border-radius: 4px; border: 1px solid var(--glass-border); background: #1e293b; color: white;">
+                            <option value="rates">Adjust Rates</option>
+                            <option value="numbers">Adjust Quantities</option>
+                        </select>
+                        <button id="btn-adjust-total" class="btn generate" style="background: linear-gradient(135deg, #f59e0b, #d97706); border: none;">Adjust Total</button>
+                    </div>
+                </div>
+
                 <div class="table-container">
                     <table id="table-proposal">
                         <thead>

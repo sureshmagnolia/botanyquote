@@ -93,6 +93,7 @@ function renderProposalOptions() {
 // Render Current Proposal
 function renderProposalList() {
     tableProposalBody.innerHTML = '';
+    let currentTotal = 0;
 
     if (proposalItems.length === 0) {
         const tr = document.createElement('tr');
@@ -103,17 +104,38 @@ function renderProposalList() {
             const masterItem = masterList.find(m => m.id === pItem.item_id);
             if (!masterItem) return;
 
+            currentTotal += masterItem.rate * pItem.qty;
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><strong>${masterItem.name}</strong></td>
                 <td>₹${masterItem.rate.toLocaleString('en-IN')}</td>
-                <td><span style="background: var(--primary-color); padding: 2px 8px; border-radius: 12px; color: white;">${pItem.qty}</span></td>
+                <td><input type="number" min="1" value="${pItem.qty}" onchange="updateProposalQty(${pItem.item_id}, this.value)" style="width: 60px; padding: 4px; border-radius: 4px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color: white; text-align: center;"></td>
                 <td><button class="btn danger" onclick="removeProposalItem(${pItem.item_id})" style="padding: 5px 10px; font-size: 0.8em;">Remove</button></td>
             `;
             tableProposalBody.appendChild(tr);
         });
     }
+    
+    const displayTotal = document.getElementById('display-current-total');
+    if (displayTotal) {
+        displayTotal.innerText = `₹${currentTotal.toLocaleString('en-IN')}`;
+    }
 }
+
+window.updateProposalQty = function (id, newQty) {
+    const qty = parseInt(newQty);
+    if (!isNaN(qty) && qty > 0) {
+        const item = proposalItems.find(p => p.item_id === id);
+        if (item) {
+            item.qty = qty;
+            saveProposalList();
+            renderProposalList(); // re-render to update the display total
+        }
+    } else {
+        renderProposalList(); // reset the field if bad data entered
+    }
+};
 
 window.removeProposalItem = function (id) {
     proposalItems = proposalItems.filter(item => item.item_id !== id);
@@ -320,6 +342,58 @@ function setupEventListeners() {
             saveProposalList();
             renderProposalList();
         }
+    });
+
+    // Adjust to Target Total
+    document.getElementById('btn-adjust-total').addEventListener('click', () => {
+        const targetInput = document.getElementById('input-target-total').value;
+        const targetTotal = parseFloat(targetInput);
+        if (isNaN(targetTotal) || targetTotal <= 0) {
+            alert('Please enter a valid target total.');
+            return;
+        }
+
+        if (proposalItems.length === 0) {
+            alert('Please add items to your proposal first.');
+            return;
+        }
+
+        const mode = document.getElementById('select-adjust-mode').value;
+        
+        let currentTotal = 0;
+        proposalItems.forEach(pItem => {
+            const master = masterList.find(m => m.id === pItem.item_id);
+            if (master) {
+                currentTotal += master.rate * pItem.qty;
+            }
+        });
+
+        if (currentTotal === 0) {
+            alert('Current total is 0. Cannot adjust.');
+            return;
+        }
+
+        const ratio = targetTotal / currentTotal;
+
+        if (mode === 'rates') {
+            proposalItems.forEach(pItem => {
+                const master = masterList.find(m => m.id === pItem.item_id);
+                if (master) {
+                    master.rate = Math.max(1, Math.round(master.rate * ratio));
+                }
+            });
+            saveMasterList();
+        } else if (mode === 'numbers') {
+            proposalItems.forEach(pItem => {
+                pItem.qty = Math.max(1, Math.round(pItem.qty * ratio));
+            });
+            saveProposalList();
+        }
+
+        renderMasterList();
+        renderProposalList();
+        document.getElementById('input-target-total').value = '';
+        alert('Proposal adjusted successfully! Note: Due to rounding, the final total may vary slightly from your exact target.');
     });
 
     // Print Purchase List
