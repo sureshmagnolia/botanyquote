@@ -413,8 +413,11 @@ function setupEventListeners() {
                 <title>Requirements List for Quotation</title>
                 <style>
                     body { font-family: 'Inter', sans-serif; padding: 20px; color: #000; background: #fff; }
-                    table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-                    th, td { border: 1px solid #000; padding: 10px; color: #000; }
+                    table { width: 100%; border-collapse: collapse; margin-bottom: 30px; page-break-inside: auto; }
+                    tr { page-break-inside: avoid; page-break-after: auto; }
+                    thead { display: table-header-group; }
+                    tfoot { display: table-footer-group; }
+                    th, td { border: 1px solid #000; padding: 6px 10px; color: #000; }
                     th { font-weight: bold; background: #f9f9f9; }
                     h1 { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-top: 40px; }
                     p { text-align: center; color: #555; margin-bottom: 30px; }
@@ -493,8 +496,11 @@ function setupEventListeners() {
                 <title>Requirements List for Intend</title>
                 <style>
                     body { font-family: 'Inter', sans-serif; padding: 20px; color: #000; background: #fff; }
-                    table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-                    th, td { border: 1px solid #000; padding: 10px; color: #000; }
+                    table { width: 100%; border-collapse: collapse; margin-bottom: 30px; page-break-inside: auto; }
+                    tr { page-break-inside: avoid; page-break-after: auto; }
+                    thead { display: table-header-group; }
+                    tfoot { display: table-footer-group; }
+                    th, td { border: 1px solid #000; padding: 6px 10px; color: #000; }
                     th { font-weight: bold; background: #f9f9f9; }
                     h1 { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-top: 40px; }
                     p { text-align: center; color: #555; margin-bottom: 30px; }
@@ -565,12 +571,12 @@ function setupEventListeners() {
                 total += amount;
 
                 rowsHtml += `
-                    <tr style="page-break-inside: avoid;">
-                        <td style="text-align:center; padding: 10px; border: 1px solid #000;">${index++}</td>
-                        <td style="padding: 10px; border: 1px solid #000;">${master.name}</td>
-                        <td style="text-align:right; padding: 10px; border: 1px solid #000;">₹${master.rate.toLocaleString('en-IN')}</td>
-                        <td style="text-align:center; padding: 10px; border: 1px solid #000;">${pItem.qty}</td>
-                        <td style="text-align:right; padding: 10px; border: 1px solid #000;">₹${amount.toLocaleString('en-IN')}</td>
+                    <tr style="page-break-inside: avoid; page-break-after: auto;">
+                        <td style="text-align:center; padding: 6px 10px; border: 1px solid #000;">${index++}</td>
+                        <td style="padding: 6px 10px; border: 1px solid #000;">${master.name}</td>
+                        <td style="text-align:right; padding: 6px 10px; border: 1px solid #000;">₹${master.rate.toLocaleString('en-IN')}</td>
+                        <td style="text-align:center; padding: 6px 10px; border: 1px solid #000;">${pItem.qty}</td>
+                        <td style="text-align:right; padding: 6px 10px; border: 1px solid #000;">₹${amount.toLocaleString('en-IN')}</td>
                     </tr>
                 `;
             });
@@ -579,14 +585,14 @@ function setupEventListeners() {
                 <div style="font-family: Arial, sans-serif; color: black; padding: 20px;">
                     <h2 style="text-align:center; text-decoration: underline; margin-bottom: 20px;">Requirements Specimen List for Quotation</h2>
                     <p style="text-align:center; margin-bottom: 30px;">Please provide your best rates for the following items</p>
-                    <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-                        <thead>
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 20px; page-break-inside: auto;">
+                        <thead style="display: table-header-group;">
                             <tr style="background-color: #f3f4f6;">
-                                <th style="padding: 10px; border: 1px solid #000; text-align:center;">Sl. No</th>
-                                <th style="padding: 10px; border: 1px solid #000; text-align:left;">Item Name</th>
-                                <th style="padding: 10px; border: 1px solid #000; text-align:right;">Est. Base Rate (₹)</th>
-                                <th style="padding: 10px; border: 1px solid #000; text-align:center;">Numbers</th>
-                                <th style="padding: 10px; border: 1px solid #000; text-align:right;">Total Rate (₹)</th>
+                                <th style="padding: 6px 10px; border: 1px solid #000; text-align:center;">Sl. No</th>
+                                <th style="padding: 6px 10px; border: 1px solid #000; text-align:left;">Item Name</th>
+                                <th style="padding: 6px 10px; border: 1px solid #000; text-align:right;">Est. Base Rate (₹)</th>
+                                <th style="padding: 6px 10px; border: 1px solid #000; text-align:center;">Numbers</th>
+                                <th style="padding: 6px 10px; border: 1px solid #000; text-align:right;">Total Rate (₹)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -825,33 +831,36 @@ function generateQuote(supplierIndex) {
                 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #fdfdfd; color: #1e293b; padding: 40px; }
                 .quote-document { max-width: 800px; margin: 0 auto; background: white; padding: 40px; border: 1px solid #e2e8f0; border-top: 8px solid #0284c7; }
                 h2 { color: #0284c7; margin-top: 0; font-weight: 700; }
-                .quote-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                .quote-table th { background: #f1f5f9; color: #334155; padding: 12px; text-align: left; border-bottom: 2px solid #cbd5e1; }
-                .quote-table td { padding: 12px; border-bottom: 1px solid #e2e8f0; page-break-inside: avoid; }
-                .quote-table tr { page-break-inside: avoid; }
-                .quote-total { margin-top: 30px; text-align: right; font-size: 1.5em; font-weight: bold; color: #0f172a; padding-top: 15px; border-top: 2px solid #cbd5e1; }
+                .quote-table { width: 100%; border-collapse: collapse; margin-top: 20px; page-break-inside: auto; }
+                .quote-table thead { display: table-header-group; }
+                .quote-table th { background: #f1f5f9; color: #334155; padding: 8px 12px; text-align: left; border-bottom: 2px solid #cbd5e1; }
+                .quote-table td { padding: 6px 12px; border-bottom: 1px solid #e2e8f0; page-break-inside: avoid; }
+                .quote-table tr { page-break-inside: avoid; page-break-after: auto; }
+                .quote-total { margin-top: 30px; text-align: right; font-size: 1.5em; font-weight: bold; color: #0f172a; padding-top: 15px; border-top: 2px solid #cbd5e1; page-break-inside: avoid; }
             `,
             "quote-2": `
                 body { font-family: 'Georgia', serif; background: #fafaf9; color: #44403c; padding: 40px; }
                 .quote-document { max-width: 800px; margin: 0 auto; background: #fffcf8; padding: 40px; border: 2px solid #d6d3d1; outline: 1px solid #a8a29e; outline-offset: 4px; }
                 h2 { color: #78350f; margin-top: 0; font-family: 'Times New Roman', Times, serif; border-bottom: 1px solid #d6d3d1; padding-bottom: 10px; }
-                .quote-table { width: 100%; border-collapse: collapse; margin-top: 20px; border: 1px solid #d6d3d1; }
-                .quote-table th { background: #f5f5f4; color: #57534e; padding: 12px; text-align: left; border: 1px solid #d6d3d1; }
-                .quote-table td { padding: 10px 12px; border: 1px solid #e7e5e4; page-break-inside: avoid; }
-                .quote-table tr { page-break-inside: avoid; }
-                .quote-total { margin-top: 30px; text-align: right; font-size: 1.4em; font-weight: bold; color: #78350f; font-family: 'Times New Roman', Times, serif; }
+                .quote-table { width: 100%; border-collapse: collapse; margin-top: 20px; border: 1px solid #d6d3d1; page-break-inside: auto; }
+                .quote-table thead { display: table-header-group; }
+                .quote-table th { background: #f5f5f4; color: #57534e; padding: 8px 12px; text-align: left; border: 1px solid #d6d3d1; }
+                .quote-table td { padding: 6px 12px; border: 1px solid #e7e5e4; page-break-inside: avoid; }
+                .quote-table tr { page-break-inside: avoid; page-break-after: auto; }
+                .quote-total { margin-top: 30px; text-align: right; font-size: 1.4em; font-weight: bold; color: #78350f; font-family: 'Times New Roman', Times, serif; page-break-inside: avoid; }
             `,
             "quote-3": `
                 body { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; background: #f0fdf4; color: #166534; padding: 40px; }
                 .quote-document { max-width: 800px; margin: 0 auto; background: white; padding: 50px; border-radius: 12px; }
                 h2 { color: #15803d; margin-top: 0; font-size: 2em; letter-spacing: -0.5px; }
-                .quote-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 30px; }
-                .quote-table th { background: #dcfce7; color: #166534; padding: 15px; text-align: left; text-transform: uppercase; font-size: 0.8em; letter-spacing: 1px; }
+                .quote-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 30px; page-break-inside: auto; }
+                .quote-table thead { display: table-header-group; }
+                .quote-table th { background: #dcfce7; color: #166534; padding: 10px 15px; text-align: left; text-transform: uppercase; font-size: 0.8em; letter-spacing: 1px; }
                 .quote-table th:first-child { border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
                 .quote-table th:last-child { border-top-right-radius: 8px; border-bottom-right-radius: 8px; }
-                .quote-table td { padding: 15px; border-bottom: 1px dashed #bbf7d0; page-break-inside: avoid; }
-                .quote-table tr { page-break-inside: avoid; }
-                .quote-total { margin-top: 30px; text-align: right; font-size: 1.8em; font-weight: 800; color: #14532d; background: #f0fdfa; padding: 20px; border-radius: 8px; display: inline-block; float: right; }
+                .quote-table td { padding: 8px 15px; border-bottom: 1px dashed #bbf7d0; page-break-inside: avoid; }
+                .quote-table tr { page-break-inside: avoid; page-break-after: auto; }
+                .quote-total { margin-top: 30px; text-align: right; font-size: 1.8em; font-weight: 800; color: #14532d; background: #f0fdfa; padding: 20px; border-radius: 8px; display: inline-block; float: right; page-break-inside: avoid; }
                 .clearfix::after { content: ""; clear: both; display: table; }
             `
         };
