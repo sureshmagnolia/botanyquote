@@ -21,10 +21,45 @@ const selectProposalItem = document.getElementById('select-item-proposal');
 // Modals
 const modalAdd = document.getElementById('modal-add-item');
 
+// Password Protection
+const passwordOverlay = document.getElementById('password-overlay');
+const inputPassword = document.getElementById('input-password');
+const btnUnlock = document.getElementById('btn-unlock');
+const passwordError = document.getElementById('password-error');
+
+function getDailyPassword() {
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, '0');
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const yyyy = now.getFullYear();
+    return `${dd}${mm}${yyyy}`;
+}
+
+function checkAccess() {
+    if (sessionStorage.getItem('botanyQuoteUnlocked') === 'true') {
+        passwordOverlay.classList.add('hidden');
+    }
+}
+
+function unlockApp() {
+    const entered = inputPassword.value;
+    const correct = getDailyPassword();
+
+    if (entered === correct) {
+        sessionStorage.setItem('botanyQuoteUnlocked', 'true');
+        passwordOverlay.classList.add('hidden');
+        passwordError.classList.remove('visible');
+    } else {
+        passwordError.classList.add('visible');
+        inputPassword.classList.add('shake');
+        setTimeout(() => inputPassword.classList.remove('shake'), 500);
+    }
+}
+
 // Initialization
 function init() {
+    checkAccess();
     renderMasterList();
-    loadSettingsToUI();
     loadSettingsToUI();
     renderProposalOptions();
     renderProposalList();
@@ -145,6 +180,12 @@ window.removeProposalItem = function (id) {
 
 // Event Listeners
 function setupEventListeners() {
+    // Password Unlock
+    btnUnlock.addEventListener('click', unlockApp);
+    inputPassword.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') unlockApp();
+    });
+
     // Navigation
     navItems.forEach(item => {
         item.addEventListener('click', () => {
@@ -682,8 +723,8 @@ function setupEventListeners() {
         }, 100);
     });
 
-    // Generate Quotes individually
-    const handleQuoteGen = (btnId, index, name) => {
+    // Generate PDF Quotes individually
+    const handleQuoteGen = (btnId, index) => {
         document.getElementById(btnId).addEventListener('click', function () {
             if (proposalItems.length === 0) {
                 alert("Please add items to your proposal first.");
@@ -692,31 +733,53 @@ function setupEventListeners() {
             const originalText = this.innerText;
             this.innerText = "⏳ Building...";
             this.disabled = true;
-
-            setTimeout(() => {
-                generateQuote(index);
+            try {
+                generateQuotePDF(index);
+            } catch(e) {
+                console.error('PDF generation error:', e);
+                alert('An error occurred while generating the PDF.');
+            } finally {
                 this.innerText = originalText;
                 this.disabled = false;
-            }, 100); // short timeout to allow UI to render the loading state
+            }
         });
     };
 
-    handleQuoteGen('btn-gen-q1', 0, "Quote 1");
-    handleQuoteGen('btn-gen-q2', 1, "Quote 2");
-    handleQuoteGen('btn-gen-q3', 2, "Quote 3");
+    handleQuoteGen('btn-gen-q1', 0);
+    handleQuoteGen('btn-gen-q2', 1);
+    handleQuoteGen('btn-gen-q3', 2);
+
+    // View HTML Quotes individually
+    const handleQuoteView = (btnId, index) => {
+        document.getElementById(btnId).addEventListener('click', function () {
+            if (proposalItems.length === 0) {
+                alert("Please add items to your proposal first.");
+                return;
+            }
+            viewQuoteHTML(index);
+        });
+    };
+
+    handleQuoteView('btn-view-q1', 0);
+    handleQuoteView('btn-view-q2', 1);
+    handleQuoteView('btn-view-q3', 2);
 }
 
 
 const defaultSettings = {
     v1: { name: "EcoBotany Supplies Ltd.", addr: "24 Greenway Road, Kochi, Kerala", percent: 0, ref: "EBS" },
     v2: { name: "Kerala Scientific & Lab Equipments", addr: "Industrial Estate, Palakkad, Kerala", percent: 5, ref: "KSL" },
-    v3: { name: "Natura Research Materials", addr: "BioPark Building, Trivandrum", percent: 10, ref: "NRM" }
+    v3: { name: "Natura Research Materials", addr: "BioPark Building, Trivandrum", percent: 10, ref: "NRM" },
+    quoteDate: new Date().toISOString().split('T')[0]
 };
 let quoteSettings = JSON.parse(localStorage.getItem('botanicalQuoteSettings')) || defaultSettings;
+// Ensure quoteDate key exists in older saved data
+if (!quoteSettings.quoteDate) quoteSettings.quoteDate = new Date().toISOString().split('T')[0];
 
 function loadSettingsToUI() {
     document.getElementById('cfg-bsc-count').value = quoteSettings.bsc || 42;
     document.getElementById('cfg-msc-count').value = quoteSettings.msc || 18;
+    document.getElementById('cfg-quote-date').value = quoteSettings.quoteDate || new Date().toISOString().split('T')[0];
     document.getElementById('cfg-v1-name').value = quoteSettings.v1.name;
     document.getElementById('cfg-v1-addr').value = quoteSettings.v1.addr;
     document.getElementById('cfg-v1-var').value = quoteSettings.v1.percent;
@@ -732,6 +795,7 @@ document.getElementById('btn-save-settings').addEventListener('click', () => {
     quoteSettings = {
         bsc: parseInt(document.getElementById('cfg-bsc-count').value) || 42,
         msc: parseInt(document.getElementById('cfg-msc-count').value) || 18,
+        quoteDate: document.getElementById('cfg-quote-date').value || new Date().toISOString().split('T')[0],
         v1: {
             name: document.getElementById('cfg-v1-name').value.trim() || defaultSettings.v1.name,
             addr: document.getElementById('cfg-v1-addr').value.trim() || defaultSettings.v1.addr,
@@ -759,192 +823,315 @@ document.getElementById('btn-save-settings').addEventListener('click', () => {
 
 
 
-function generateQuote(supplierIndex) {
-    return new Promise((resolve, reject) => {
-        const suppliers = [
-            { name: quoteSettings.v1.name, address: quoteSettings.v1.addr, styleId: "quote-1", variance: () => (1 + (quoteSettings.v1.percent / 100)), dateRef: quoteSettings.v1.ref },
-            { name: quoteSettings.v2.name, address: quoteSettings.v2.addr, styleId: "quote-2", variance: () => (1 + (quoteSettings.v2.percent / 100)), dateRef: quoteSettings.v2.ref },
-            { name: quoteSettings.v3.name, address: quoteSettings.v3.addr, styleId: "quote-3", variance: () => (1 + (quoteSettings.v3.percent / 100)), dateRef: quoteSettings.v3.ref }
-        ];
+// ============================================================
+// Helper: format a stored ISO date string to a display string
+// ============================================================
+function formatQuoteDate(isoDate) {
+    if (!isoDate) return '';
+    const [y, m, d] = isoDate.split('-');
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return `${parseInt(d, 10)} ${months[parseInt(m, 10) - 1]} ${y}`;
+}
 
-        const generateTableRows = (supplierVariance) => {
-            let rowsHtml = '';
-            let total = 0;
-            let index = 1;
+// ============================================================
+// Build the rows data array for a given supplier variance fn
+// ============================================================
+function buildQuoteRows(varianceFn) {
+    const rows = [];
+    let total = 0;
+    let index = 1;
+    proposalItems.forEach(pItem => {
+        const master = masterList.find(m => m.id === pItem.item_id);
+        if (!master) return;
+        const rate = Math.ceil(master.rate * varianceFn());
+        const amount = rate * pItem.qty;
+        total += amount;
+        rows.push({ sl: index++, name: master.name, rate, qty: pItem.qty, amount });
+    });
+    return { rows, total };
+}
 
-            proposalItems.forEach(pItem => {
-                const master = masterList.find(m => m.id === pItem.item_id);
-                if (!master) return;
+// ============================================================
+// Feature 2: jsPDF + autoTable PDF Generator
+// ============================================================
+function generateQuotePDF(supplierIndex) {
+    const { jsPDF } = window.jspdf;
+    const suppliers = [
+        { name: quoteSettings.v1.name, addr: quoteSettings.v1.addr, percent: quoteSettings.v1.percent, ref: quoteSettings.v1.ref, color: [2, 132, 199] },
+        { name: quoteSettings.v2.name, addr: quoteSettings.v2.addr, percent: quoteSettings.v2.percent, ref: quoteSettings.v2.ref, color: [120, 53, 15] },
+        { name: quoteSettings.v3.name, addr: quoteSettings.v3.addr, percent: quoteSettings.v3.percent, ref: quoteSettings.v3.ref, color: [21, 128, 61] }
+    ];
+    const supplier = suppliers[supplierIndex];
+    if (!supplier) return;
 
-                let specificRate = Math.ceil(master.rate * supplierVariance());
-                const amount = specificRate * pItem.qty;
-                total += amount;
+    const varianceFn = () => 1 + (supplier.percent / 100);
+    const { rows, total } = buildQuoteRows(varianceFn);
+    const displayDate = formatQuoteDate(quoteSettings.quoteDate);
+    const refNo = `${supplier.ref}-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000)}`.padEnd(12);
 
-                rowsHtml += `
-                    <tr style="page-break-inside: avoid;">
-                        <td style="text-align:center">${index++}</td>
-                        <td>${master.name}</td>
-                        <td style="text-align:right">₹${specificRate.toLocaleString('en-IN')}</td>
-                        <td style="text-align:center">${pItem.qty}</td>
-                        <td style="text-align:right">₹${amount.toLocaleString('en-IN')}</td>
-                    </tr>
-                `;
-            });
-            return { rowsHtml, total };
-        };
+    const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const margin = 14;
+    const [r, g, b] = supplier.color;
 
-        const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-        const supplier = suppliers[supplierIndex];
-        if (!supplier) return reject("Invalid supplier index");
+    // --- Header bar ---
+    doc.setFillColor(r, g, b);
+    doc.rect(0, 0, pageW, 22, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(255, 255, 255);
+    doc.text(supplier.name, margin, 14);
 
-        // We only process the selected supplier
-        const { rowsHtml, total } = generateTableRows(supplier.variance);
+    // --- Supplier address & date block ---
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(80, 80, 80);
+    const addrLines = doc.splitTextToSize(supplier.addr, pageW * 0.55);
+    doc.text(addrLines, margin, 30);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Ref No:', pageW - margin - 55, 28);
+    doc.text('Date:', pageW - margin - 55, 34);
+    doc.setFont('helvetica', 'normal');
+    doc.text(refNo, pageW - margin - 20, 28);
+    doc.text(displayDate, pageW - margin - 20, 34);
 
-        let headerHtml = "";
+    // --- Divider ---
+    doc.setDrawColor(r, g, b);
+    doc.setLineWidth(0.5);
+    doc.line(margin, 40, pageW - margin, 40);
 
-        if (supplier.styleId === "quote-3") {
-            headerHtml = `
-                <div class="q-header">
-                    <div class="title-row">
-                        <h2>${supplier.name}</h2>
-                    </div>
-                    <p style="margin:0; font-size: 0.9em; color:#475569;">${supplier.address}</p>
-                    <div style="display:flex; justify-content: space-between; margin-top: 15px;">
-                        <span><strong>Ref:</strong> ${supplier.dateRef}-2024-${Math.floor(Math.random() * 1000)}</span>
-                        <span><strong>Date:</strong> ${today}</span>
-                    </div>
-                </div>
-            `;
-        } else {
-            headerHtml = `
-                <div class="q-header">
-                    <h2>${supplier.name}</h2>
-                     <p style="margin:0; font-size: 0.9em; color:#475569;">${supplier.address}</p>
-                    <div style="display:flex; justify-content: space-between; margin-top: 15px;">
-                        <span><strong>Quotation Ref:</strong> ${supplier.dateRef}-2024-${Math.floor(Math.random() * 1000)}</span>
-                        <span><strong>Date:</strong> ${today}</span>
-                    </div>
-                </div>
-            `;
+    // --- To / Subject block ---
+    let y = 46;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(30, 30, 30);
+    doc.text('To,', margin, y); y += 5;
+    doc.setFont('helvetica', 'normal');
+    doc.text('The Principal / Head of Department,', margin, y); y += 5;
+    doc.text('PG and Research Department of Botany,', margin, y); y += 5;
+    doc.text('Government Victoria College, Palakkad.', margin, y); y += 8;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Subject: ', margin, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Quotation for Botanical Specimens and Laboratory Infrastructure', margin + 18, y);
+    y += 7;
+
+    doc.setFont('helvetica', 'normal');
+    doc.text('Dear Sir/Madam,', margin, y); y += 5;
+    const bodyText = doc.splitTextToSize('As per your requirement, we are pleased to submit our best quote for the following items:', pageW - margin * 2);
+    doc.text(bodyText, margin, y); y += bodyText.length * 5 + 2;
+
+    // --- Items Table via autoTable ---
+    const tableBody = rows.map(row => [
+        row.sl,
+        row.name,
+        row.rate.toLocaleString('en-IN'),
+        row.qty,
+        row.amount.toLocaleString('en-IN')
+    ]);
+
+    doc.autoTable({
+        startY: y,
+        head: [['Sl.No', 'Item Description', 'Unit Rate (₹)', 'Qty', 'Amount (₹)']],
+        body: tableBody,
+        foot: [['', '', '', { content: 'Grand Total:', styles: { halign: 'right', fontStyle: 'bold' } }, { content: '₹' + total.toLocaleString('en-IN'), styles: { halign: 'right', fontStyle: 'bold' } }]],
+        showFoot: 'lastPage',
+        margin: { left: margin, right: margin },
+        styles: { fontSize: 8.5, cellPadding: 3, overflow: 'linebreak' },
+        headStyles: { fillColor: [r, g, b], textColor: 255, fontStyle: 'bold', halign: 'left' },
+        footStyles: { fillColor: [245, 245, 245], textColor: [30, 30, 30] },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        columnStyles: {
+            0: { halign: 'center', cellWidth: 12 },
+            2: { halign: 'right', cellWidth: 30 },
+            3: { halign: 'center', cellWidth: 16 },
+            4: { halign: 'right', cellWidth: 32 }
+        },
+        didDrawPage: function(data) {
+            // Page numbers at bottom
+            const pageCount = doc.internal.getNumberOfPages();
+            doc.setFontSize(8);
+            doc.setTextColor(120);
+            doc.text(`Page ${data.pageNumber} of ${pageCount}`, pageW / 2, pageH - 8, { align: 'center' });
         }
+    });
 
-        const quoteContent = `
-            ${headerHtml}
-            <div style="margin-top: 20px; line-height: 1.6;">
-                <p><strong>To:</strong><br>The Principal / Head of Department,<br>PG and Research Department of Botany,<br>Government Victoria College, Palakkad.</p>
-                <p><strong>Subject:</strong> Quotation for Botanical Specimens and Laboratory Infrastructure</p>
-                <p>Dear Sir/Madam,<br>As per your requirement, we are pleased to submit our best quote for the following items:</p>
-            </div>
-            
-            <table class="quote-table">
+    // --- Footer: Terms & Signatory ---
+    let finalY = doc.lastAutoTable.finalY + 10;
+    if (finalY + 30 > pageH - 15) { doc.addPage(); finalY = 20; }
+
+    doc.setFontSize(8);
+    doc.setTextColor(80, 80, 80);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Terms & Conditions:', margin, finalY);
+    doc.setFont('helvetica', 'normal');
+    doc.text('1. Prices are inclusive of all taxes.', margin, finalY + 5);
+    doc.text('2. Validity: 30 days.', margin, finalY + 10);
+
+    // Signatory on right
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(30, 30, 30);
+    doc.text('Authorized Signatory', pageW - margin, finalY + 14, { align: 'right' });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text(supplier.name, pageW - margin, finalY + 19, { align: 'right' });
+
+    // underline for signatory
+    doc.setDrawColor(r, g, b);
+    doc.setLineWidth(0.3);
+    doc.line(pageW - margin - 60, finalY + 15, pageW - margin, finalY + 15);
+
+    doc.save(`Quotation_${supplier.name.replace(/\s+/g, '_')}.pdf`);
+}
+
+// ============================================================
+// Feature 3: View Quote as HTML in new tab
+// ============================================================
+function viewQuoteHTML(supplierIndex) {
+    const styleThemes = [
+        {
+            accentHex: '#0284c7', bgHex: '#f0f9ff', headerBg: '#0284c7', headerFg: 'white',
+            thBg: '#f1f5f9', thFg: '#334155', borderColor: '#cbd5e1', totalFg: '#0f172a',
+            docBorder: '8px solid #0284c7', font: "'Segoe UI', sans-serif"
+        },
+        {
+            accentHex: '#92400e', bgHex: '#fafaf9', headerBg: '#92400e', headerFg: 'white',
+            thBg: '#f5f5f4', thFg: '#57534e', borderColor: '#d6d3d1', totalFg: '#78350f',
+            docBorder: '2px solid #d6d3d1', font: "Georgia, 'Times New Roman', serif"
+        },
+        {
+            accentHex: '#15803d', bgHex: '#f0fdf4', headerBg: '#15803d', headerFg: 'white',
+            thBg: '#dcfce7', thFg: '#166534', borderColor: '#86efac', totalFg: '#14532d',
+            docBorder: '2px solid #86efac', font: "'Segoe UI', Arial, sans-serif"
+        }
+    ];
+
+    const suppliers = [
+        { name: quoteSettings.v1.name, addr: quoteSettings.v1.addr, percent: quoteSettings.v1.percent, ref: quoteSettings.v1.ref },
+        { name: quoteSettings.v2.name, addr: quoteSettings.v2.addr, percent: quoteSettings.v2.percent, ref: quoteSettings.v2.ref },
+        { name: quoteSettings.v3.name, addr: quoteSettings.v3.addr, percent: quoteSettings.v3.percent, ref: quoteSettings.v3.ref }
+    ];
+
+    const supplier = suppliers[supplierIndex];
+    const theme = styleThemes[supplierIndex];
+    if (!supplier) return;
+
+    const varianceFn = () => 1 + (supplier.percent / 100);
+    const { rows, total } = buildQuoteRows(varianceFn);
+    const displayDate = formatQuoteDate(quoteSettings.quoteDate);
+    const refNo = `${supplier.ref}-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000)}`;
+
+    const tableRows = rows.map((row, i) => `
+        <tr style="background: ${i % 2 === 0 ? '#fff' : '#f8fafc'};">
+            <td style="text-align:center;">${row.sl}</td>
+            <td>${row.name}</td>
+            <td style="text-align:right;">₹${row.rate.toLocaleString('en-IN')}</td>
+            <td style="text-align:center;">${row.qty}</td>
+            <td style="text-align:right;">₹${row.amount.toLocaleString('en-IN')}</td>
+        </tr>
+    `).join('');
+
+    const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quotation — ${supplier.name}</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: ${theme.font}; background: ${theme.bgHex}; color: #1e293b; padding: 30px; }
+        .doc { max-width: 860px; margin: 0 auto; background: white; border-top: ${theme.docBorder}; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+        .doc-header { background: ${theme.headerBg}; color: ${theme.headerFg}; padding: 24px 32px; }
+        .doc-header h1 { font-size: 1.5em; margin-bottom: 4px; }
+        .doc-header p { font-size: 0.9em; opacity: 0.85; }
+        .meta-row { display: flex; justify-content: space-between; padding: 12px 32px; background: #f8fafc; border-bottom: 1px solid ${theme.borderColor}; font-size: 0.85em; color: #475569; }
+        .body-section { padding: 24px 32px; }
+        .body-section p { margin-bottom: 10px; font-size: 0.9em; line-height: 1.7; }
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 0.88em; }
+        thead th { background: ${theme.thBg}; color: ${theme.thFg}; padding: 10px 12px; text-align: left; border: 1px solid ${theme.borderColor}; font-weight: 600; }
+        tbody td { padding: 8px 12px; border: 1px solid ${theme.borderColor}; }
+        tfoot td { padding: 10px 12px; border: 1px solid ${theme.borderColor}; background: #f1f5f9; font-weight: bold; }
+        .footer-section { display: flex; justify-content: space-between; align-items: flex-end; padding: 24px 32px; border-top: 1px solid ${theme.borderColor}; margin-top: 16px; }
+        .terms { font-size: 0.8em; color: #64748b; line-height: 1.8; }
+        .signatory { text-align: center; }
+        .signatory .line { border-top: 2px solid ${theme.accentHex}; width: 200px; margin: 40px auto 6px; }
+        .signatory p { font-size: 0.85em; color: #475569; }
+        .signatory strong { font-size: 0.9em; color: #1e293b; }
+        @media print {
+            body { padding: 0; background: white; }
+            .doc { box-shadow: none; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="text-align:center; margin-bottom: 20px;">
+        <button onclick="window.print()" style="padding: 10px 28px; background: ${theme.headerBg}; color: white; border: none; border-radius: 6px; font-size: 1em; cursor: pointer;">🖨️ Print / Save as PDF</button>
+    </div>
+    <div class="doc">
+        <div class="doc-header">
+            <h1>${supplier.name}</h1>
+            <p>${supplier.addr}</p>
+        </div>
+        <div class="meta-row">
+            <span><strong>Ref No:</strong> ${refNo}</span>
+            <span><strong>Date:</strong> ${displayDate}</span>
+        </div>
+        <div class="body-section">
+            <p><strong>To,</strong><br>
+            The Principal / Head of Department,<br>
+            PG and Research Department of Botany,<br>
+            Government Victoria College, Palakkad.</p>
+            <p><strong>Subject:</strong> Quotation for Botanical Specimens and Laboratory Infrastructure</p>
+            <p>Dear Sir/Madam,<br>As per your requirement, we are pleased to submit our best quote for the following items:</p>
+            <table>
                 <thead>
                     <tr>
-                        <th width="5%">Sl.No</th>
-                        <th width="50%">Item Description</th>
-                        <th width="15%">Unit Rate (₹)</th>
-                        <th width="10%">Qty</th>
-                        <th width="20%">Amount (₹)</th>
+                        <th style="width:6%; text-align:center;">Sl.No</th>
+                        <th style="width:46%;">Item Description</th>
+                        <th style="width:16%; text-align:right;">Unit Rate (₹)</th>
+                        <th style="width:10%; text-align:center;">Qty</th>
+                        <th style="width:22%; text-align:right;">Amount (₹)</th>
                     </tr>
                 </thead>
                 <tbody>
-                    ${rowsHtml}
+                    ${tableRows}
                 </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3"></td>
+                        <td style="text-align:right;">Grand Total:</td>
+                        <td style="text-align:right;">₹${total.toLocaleString('en-IN')}</td>
+                    </tr>
+                </tfoot>
             </table>
-            
-            <div class="quote-total" style="page-break-inside: avoid;">
-                Grand Total: ₹${total.toLocaleString('en-IN')}
+        </div>
+        <div class="footer-section">
+            <div class="terms">
+                <strong>Terms &amp; Conditions:</strong><br>
+                1. Prices are inclusive of all taxes.<br>
+                2. Validity: 30 days.
             </div>
-            
-            <div style="margin-top: 60px; display:flex; justify-content: space-between; page-break-inside: avoid;">
-                <div>
-                   <p style="font-size: 0.8em; color: #64748b;">Terms & Conditions:<br>1. Prices are inclusive of all taxes.<br>2. Validity: 30 days.</p>
-                </div>
-                <div style="text-align: center;">
-                    <br><br>
-                    <p style="margin: 0; text-decoration: underline;">Authorized Signatory</p>
-                    <p style="margin: 0; font-size: 0.8em; font-weight: bold; margin-top: 5px;">${supplier.name}</p>
-                </div>
+            <div class="signatory">
+                <div class="line"></div>
+                <strong>Authorized Signatory</strong>
+                <p>${supplier.name}</p>
             </div>
-        `;
+        </div>
+    </div>
+</body>
+</html>`;
 
-        let styleBlocks = {
-            "quote-1": `
-                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #fdfdfd; color: #1e293b; padding: 40px; }
-                .quote-document { max-width: 800px; margin: 0 auto; background: white; padding: 40px; border: 1px solid #e2e8f0; border-top: 8px solid #0284c7; }
-                h2 { color: #0284c7; margin-top: 0; font-weight: 700; }
-                .quote-table { width: 100%; border-collapse: collapse; margin-top: 20px; page-break-inside: auto; }
-                .quote-table thead { display: table-header-group; }
-                .quote-table th { background: #f1f5f9; color: #334155; padding: 8px 12px; text-align: left; border-bottom: 2px solid #cbd5e1; }
-                .quote-table td { padding: 6px 12px; border-bottom: 1px solid #e2e8f0; page-break-inside: avoid; }
-                .quote-table tr { page-break-inside: avoid; page-break-after: auto; }
-                .quote-total { margin-top: 30px; text-align: right; font-size: 1.5em; font-weight: bold; color: #0f172a; padding-top: 15px; border-top: 2px solid #cbd5e1; page-break-inside: avoid; }
-            `,
-            "quote-2": `
-                body { font-family: 'Georgia', serif; background: #fafaf9; color: #44403c; padding: 40px; }
-                .quote-document { max-width: 800px; margin: 0 auto; background: #fffcf8; padding: 40px; border: 2px solid #d6d3d1; outline: 1px solid #a8a29e; outline-offset: 4px; }
-                h2 { color: #78350f; margin-top: 0; font-family: 'Times New Roman', Times, serif; border-bottom: 1px solid #d6d3d1; padding-bottom: 10px; }
-                .quote-table { width: 100%; border-collapse: collapse; margin-top: 20px; border: 1px solid #d6d3d1; page-break-inside: auto; }
-                .quote-table thead { display: table-header-group; }
-                .quote-table th { background: #f5f5f4; color: #57534e; padding: 8px 12px; text-align: left; border: 1px solid #d6d3d1; }
-                .quote-table td { padding: 6px 12px; border: 1px solid #e7e5e4; page-break-inside: avoid; }
-                .quote-table tr { page-break-inside: avoid; page-break-after: auto; }
-                .quote-total { margin-top: 30px; text-align: right; font-size: 1.4em; font-weight: bold; color: #78350f; font-family: 'Times New Roman', Times, serif; page-break-inside: avoid; }
-            `,
-            "quote-3": `
-                body { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; background: #f0fdf4; color: #166534; padding: 40px; }
-                .quote-document { max-width: 800px; margin: 0 auto; background: white; padding: 50px; border-radius: 12px; }
-                h2 { color: #15803d; margin-top: 0; font-size: 2em; letter-spacing: -0.5px; }
-                .quote-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 30px; page-break-inside: auto; }
-                .quote-table thead { display: table-header-group; }
-                .quote-table th { background: #dcfce7; color: #166534; padding: 10px 15px; text-align: left; text-transform: uppercase; font-size: 0.8em; letter-spacing: 1px; }
-                .quote-table th:first-child { border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
-                .quote-table th:last-child { border-top-right-radius: 8px; border-bottom-right-radius: 8px; }
-                .quote-table td { padding: 8px 15px; border-bottom: 1px dashed #bbf7d0; page-break-inside: avoid; }
-                .quote-table tr { page-break-inside: avoid; page-break-after: auto; }
-                .quote-total { margin-top: 30px; text-align: right; font-size: 1.8em; font-weight: 800; color: #14532d; background: #f0fdfa; padding: 20px; border-radius: 8px; display: inline-block; float: right; page-break-inside: avoid; }
-                .clearfix::after { content: ""; clear: both; display: table; }
-            `
-        };
-
-        const styleTag = document.createElement('style');
-        styleTag.innerHTML = styleBlocks[supplier.styleId];
-
-        const wrapper = document.createElement('div');
-        wrapper.className = `quote-document ${supplier.styleId} clearfix`;
-        wrapper.innerHTML = quoteContent;
-        wrapper.appendChild(styleTag);
-
-        const opt = {
-            margin: [10, 10, 20, 10], // Increased bottom margin for page numbers
-            filename: `Quotation_${supplier.name.replace(/\s+/g, '_')}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak: { mode: ['css', 'legacy'] }
-        };
-
-        // Use Promise chaining to wait for PDF generation then inject page numbers
-        html2pdf().from(wrapper).set(opt).toPdf().get('pdf').then(function (pdf) {
-            const totalPages = pdf.internal.getNumberOfPages();
-            for (let i = 1; i <= totalPages; i++) {
-                pdf.setPage(i);
-                pdf.setFontSize(10);
-                pdf.setTextColor(100);
-                // Draw text "Page X of Y" at the bottom center
-                pdf.text(
-                    'Page ' + i + ' of ' + totalPages,
-                    pdf.internal.pageSize.getWidth() / 2,
-                    pdf.internal.pageSize.getHeight() - 10,
-                    { align: 'center' }
-                );
-            }
-        }).save().then(() => {
-            resolve();
-        }).catch(err => {
-            reject(err);
-        });
-    });
+    const win = window.open('', '_blank');
+    win.document.open();
+    win.document.write(htmlContent);
+    win.document.close();
 }
 
+// ============================================================
 // Start
+// ============================================================
 init();

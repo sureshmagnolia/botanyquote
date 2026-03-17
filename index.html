@@ -6,15 +6,139 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Botanical Specimen Quotations</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        /* Password Overlay Styles */
+        #password-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 20000;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        #password-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .password-card {
+            width: 100%;
+            max-width: 400px;
+            padding: 40px;
+            text-align: center;
+            animation: fadeInScale 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .password-card h2 {
+            margin-bottom: 30px;
+            font-weight: 600;
+            letter-spacing: -0.025em;
+            background: linear-gradient(to right, #60a5fa, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        #input-password {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            font-size: 1.25rem;
+            text-align: center;
+            letter-spacing: 0.25em;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        #input-password:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        #btn-unlock {
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        #btn-unlock:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            filter: brightness(1.1);
+        }
+
+        #btn-unlock:active {
+            transform: translateY(0);
+        }
+
+        #password-error {
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: 15px;
+            min-height: 1.25rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #password-error.visible {
+            opacity: 1;
+        }
+
+        .shake {
+            animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+    </style>
 </head>
 
 <body>
+    <!-- Password Overlay -->
+    <div id="password-overlay">
+        <div class="password-card glass-panel">
+            <h2>LeafyQuotes Access</h2>
+            <p style="color: #94a3b8; margin-bottom: 20px; font-size: 0.9rem;">Please enter the password to continue.</p>
+            <input type="password" id="input-password" placeholder="••••••••" maxlength="8">
+            <button id="btn-unlock">Unlock Application</button>
+            <div id="password-error">Invalid password. Please try again.</div>
+        </div>
+    </div>
     <div class="app-container">
         <!-- Sidebar / Navigation -->
         <nav class="sidebar glass-panel">
             <h2>LeafyQuotes</h2>
-            <ul>
+            <ul id="sidebar-nav">
                 <li class="active" data-view="master-list">🌿 Master List</li>
                 <li data-view="settings">⚙️ Quote Config</li>
                 <li data-view="proposal">📝 Build Proposal</li>
@@ -87,16 +211,19 @@
                         <button id="btn-print-purchase" class="btn secondary">🖨️ Print for Purchase</button>
                         <button id="btn-print-intend" class="btn secondary">🖨️ Print List for Intend</button>
                         <button id="btn-pdf-purchase" class="btn secondary">📥 PDF for Purchase</button>
-                        <div style="display: inline-flex; gap: 10px; flex-wrap: wrap; margin-left: auto;">
+                        <div style="display: inline-flex; gap: 8px; flex-wrap: wrap; margin-left: auto; align-items: center;">
                             <button id="btn-gen-q1" class="btn generate"
-                                style="background: linear-gradient(135deg, #0284c7, #0369a1); border: none;">📄 PDF
-                                Quote 1</button>
+                                style="background: linear-gradient(135deg, #0284c7, #0369a1); border: none;">📄 PDF Q1</button>
+                            <button id="btn-view-q1" class="btn secondary"
+                                style="padding: 10px 14px;">👁 HTML Q1</button>
                             <button id="btn-gen-q2" class="btn generate"
-                                style="background: linear-gradient(135deg, #78350f, #451a03); border: none;">📄 PDF
-                                Quote 2</button>
+                                style="background: linear-gradient(135deg, #78350f, #451a03); border: none;">📄 PDF Q2</button>
+                            <button id="btn-view-q2" class="btn secondary"
+                                style="padding: 10px 14px;">👁 HTML Q2</button>
                             <button id="btn-gen-q3" class="btn generate"
-                                style="background: linear-gradient(135deg, #15803d, #14532d); border: none;">📄 PDF
-                                Quote 3</button>
+                                style="background: linear-gradient(135deg, #15803d, #14532d); border: none;">📄 PDF Q3</button>
+                            <button id="btn-view-q3" class="btn secondary"
+                                style="padding: 10px 14px;">👁 HTML Q3</button>
                         </div>
                     </div>
                 </header>
@@ -202,19 +329,24 @@
                     <button id="btn-save-settings" class="btn primary">💾 Save Settings</button>
                 </header>
                 <div class="settings-container" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
-                    <!-- Base Settings (New) -->
+                    <!-- Base Settings -->
                     <div class="glass-panel" style="padding: 20px; border-top: 4px solid #a855f7; grid-column: 1 / -1;">
                         <h3 style="color: #c084fc; margin-top:0;">Student Strength (Class Configuration)</h3>
-                        <div style="display: flex; gap: 20px;">
-                            <div style="flex: 1;">
+                        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 120px;">
                                 <label style="display:block; margin-bottom:5px; font-size:0.9em; color:#cbd5e1;">BSC
                                     Students</label>
                                 <input type="number" id="cfg-bsc-count" style="width: 100%;" value="42">
                             </div>
-                            <div style="flex: 1;">
+                            <div style="flex: 1; min-width: 120px;">
                                 <label style="display:block; margin-bottom:5px; font-size:0.9em; color:#cbd5e1;">MSC
                                     Students</label>
                                 <input type="number" id="cfg-msc-count" style="width: 100%;" value="18">
+                            </div>
+                            <div style="flex: 1; min-width: 160px;">
+                                <label style="display:block; margin-bottom:5px; font-size:0.9em; color:#cbd5e1;">📅 Quote Date</label>
+                                <input type="date" id="cfg-quote-date" style="width: 100%; color-scheme: dark;">
+                                <p style="font-size:0.75em; color:#64748b; margin-top:5px; margin-bottom:0;">This date appears on all generated quotes.</p>
                             </div>
                         </div>
                         <p style="font-size:0.8em; color:#64748b; margin-top:10px;">When adding items to proposal via
