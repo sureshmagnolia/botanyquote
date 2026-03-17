@@ -189,7 +189,7 @@
                             <tr>
                                 <th>Item Name</th>
                                 <th>Category</th>
-                                <th>Est. Base Rate (₹)</th>
+                                <th>Est. Base Rate (Rs.)</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -258,11 +258,11 @@
                         </div>
                         <div style="text-align: right;">
                             <span style="font-size: 0.9em; color: #cbd5e1;">Current Total:</span><br>
-                            <span id="display-current-total" style="font-size: 1.5em; font-weight: bold; color: #4ade80;">₹0</span>
+                            <span id="display-current-total" style="font-size: 1.5em; font-weight: bold; color: #4ade80;">Rs. 0</span>
                         </div>
                     </div>
                     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                        <input type="number" id="input-target-total" placeholder="Target Total ₹" style="flex: 1; min-width: 150px; padding: 10px; border-radius: 4px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color: white;">
+                        <input type="number" id="input-target-total" placeholder="Target Total Rs." style="flex: 1; min-width: 150px; padding: 10px; border-radius: 4px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color: white;">
                         <select id="select-adjust-mode" style="padding: 10px; border-radius: 4px; border: 1px solid var(--glass-border); background: #1e293b; color: white;">
                             <option value="rates">Adjust Rates</option>
                             <option value="numbers">Adjust Quantities</option>
@@ -285,7 +285,7 @@
                     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                         <div style="flex: 1; min-width: 200px;">
                             <label style="display:block; margin-bottom:5px; font-size:0.8em; color:#94a3b8;">Final Agreed Amount (Optional)</label>
-                            <input type="number" id="input-final-bill-amount" placeholder="Agreed Total ₹" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color: white;">
+                            <input type="number" id="input-final-bill-amount" placeholder="Agreed Total Rs." style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color: white;">
                         </div>
                         <button id="btn-generate-bill" class="btn generate" style="background: linear-gradient(135deg, #10b981, #059669); border: none; align-self: flex-end; padding: 12px 25px;">🧾 Generate Bill</button>
                     </div>
@@ -321,13 +321,13 @@
                                 Item Name</th>
                             <th
                                 style="border: 1px solid #000; padding: 10px; color:#000; font-weight: bold; text-align:right;">
-                                Est. Base Rate (₹)</th>
+                                Est. Base Rate (Rs.)</th>
                             <th
                                 style="border: 1px solid #000; padding: 10px; color:#000; font-weight: bold; text-align:center;">
                                 Numbers</th>
                             <th
                                 style="border: 1px solid #000; padding: 10px; color:#000; font-weight: bold; text-align:right;">
-                                Total Rate (₹)</th>
+                                Total Rate (Rs.)</th>
                         </tr>
                     </thead>
                     <tbody id="purchase-list-body">
@@ -448,7 +448,7 @@
                     <option value="Supplies">Supplies</option>
                     <option value="Specimen">General Specimen</option>
                 </select>
-                <label>Estimated Base Rate (₹)</label>
+                <label>Estimated Base Rate (Rs.)</label>
                 <input type="number" id="input-item-rate" placeholder="0.00">
             </div>
             <div class="modal-actions" style="margin-top: 20px;">

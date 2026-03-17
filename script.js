@@ -83,7 +83,7 @@ function renderMasterList() {
         tr.innerHTML = `
             <td><strong>${item.name}</strong></td>
             <td><span style="background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 4px; font-size: 0.8em; color: #cbd5e1">${item.category}</span></td>
-            <td>₹${item.rate.toLocaleString('en-IN')}</td>
+            <td>Rs. ${item.rate.toLocaleString('en-IN')}</td>
             <td style="display:flex; gap:10px;"><button class="btn secondary" onclick="editMasterItem(${item.id})" style="padding: 5px 10px; font-size: 0.8em; border: 1px solid #94a3b8;">Edit</button><button class="btn danger" onclick="deleteMasterItem(${item.id})" style="padding: 5px 10px; font-size: 0.8em;">Delete</button></td>
         `;
         tableMasterBody.appendChild(tr);
@@ -120,7 +120,7 @@ function renderProposalOptions() {
     masterList.forEach(item => {
         const option = document.createElement('option');
         option.value = item.id;
-        option.textContent = `${item.name} (Est. ₹${item.rate})`;
+        option.textContent = `${item.name} (Est. Rs. ${item.rate})`;
         selectProposalItem.appendChild(option);
     });
 }
@@ -144,7 +144,7 @@ function renderProposalList() {
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><strong>${masterItem.name}</strong></td>
-                <td>₹${masterItem.rate.toLocaleString('en-IN')}</td>
+                <td>Rs. ${masterItem.rate.toLocaleString('en-IN')}</td>
                 <td><input type="number" min="1" value="${pItem.qty}" onchange="updateProposalQty(${pItem.item_id}, this.value)" style="width: 60px; padding: 4px; border-radius: 4px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color: white; text-align: center;"></td>
                 <td><button class="btn danger" onclick="removeProposalItem(${pItem.item_id})" style="padding: 5px 10px; font-size: 0.8em;">Remove</button></td>
             `;
@@ -154,7 +154,7 @@ function renderProposalList() {
     
     const displayTotal = document.getElementById('display-current-total');
     if (displayTotal) {
-        displayTotal.innerText = `₹${currentTotal.toLocaleString('en-IN')}`;
+        displayTotal.innerText = `Rs. ${currentTotal.toLocaleString('en-IN')}`;
     }
     updateLowestVendorDisplay();
 }
@@ -182,7 +182,7 @@ function updateLowestVendorDisplay() {
     const minIdx = totals.indexOf(minTotal);
     const bestVendor = suppliers[minIdx];
 
-    infoDiv.innerHTML = `Lowest: <strong style="color: #10b981">${bestVendor.name}</strong><br>Total: <strong>₹${minTotal.toLocaleString('en-IN')}</strong>`;
+    infoDiv.innerHTML = `Lowest: <strong style="color: #10b981">${bestVendor.name}</strong><br>Total: <strong>Rs. ${minTotal.toLocaleString('en-IN')}</strong>`;
 }
 
 window.updateProposalQty = function (id, newQty) {
@@ -540,9 +540,9 @@ function setupEventListeners() {
                         <tr>
                             <th style="text-align:center;">Sl. No</th>
                             <th style="text-align:left;">Item Name</th>
-                            <th style="text-align:right;">Est. Base Rate (₹)</th>
+                            <th style="text-align:right;">Est. Base Rate (Rs.)</th>
                             <th style="text-align:center;">Numbers</th>
-                            <th style="text-align:right;">Total Rate (₹)</th>
+                            <th style="text-align:right;">Total Rate (Rs.)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -574,7 +574,7 @@ function setupEventListeners() {
                 </table>
                 <div style="font-weight: bold; background-color: #f9f9f9; padding: 10px; border: 1px solid #000; border-top: none; text-align: right; page-break-inside: avoid;">
                     <span style="margin-right: 20px;">Grand Total:</span>
-                    <span>₹${total.toLocaleString('en-IN')}</span>
+                    <span>Rs. ${total.toLocaleString('en-IN')}</span>
                 </div>
                 <script>
                     window.onload = function() { window.print(); }
@@ -683,9 +683,9 @@ function setupEventListeners() {
                     <tr style="page-break-inside: avoid; page-break-after: auto;">
                         <td style="text-align:center; padding: 6px 10px; border: 1px solid #000;">${index++}</td>
                         <td style="padding: 6px 10px; border: 1px solid #000;">${master.name}</td>
-                        <td style="text-align:right; padding: 6px 10px; border: 1px solid #000;">₹${master.rate.toLocaleString('en-IN')}</td>
+                        <td style="text-align:right; padding: 6px 10px; border: 1px solid #000;">Rs. ${master.rate.toLocaleString('en-IN')}</td>
                         <td style="text-align:center; padding: 6px 10px; border: 1px solid #000;">${pItem.qty}</td>
-                        <td style="text-align:right; padding: 6px 10px; border: 1px solid #000;">₹${amount.toLocaleString('en-IN')}</td>
+                        <td style="text-align:right; padding: 6px 10px; border: 1px solid #000;">Rs. ${amount.toLocaleString('en-IN')}</td>
                     </tr>
                 `;
             });
@@ -699,9 +699,9 @@ function setupEventListeners() {
                             <tr style="background-color: #f3f4f6;">
                                 <th style="padding: 6px 10px; border: 1px solid #000; text-align:center;">Sl. No</th>
                                 <th style="padding: 6px 10px; border: 1px solid #000; text-align:left;">Item Name</th>
-                                <th style="padding: 6px 10px; border: 1px solid #000; text-align:right;">Est. Base Rate (₹)</th>
+                                <th style="padding: 6px 10px; border: 1px solid #000; text-align:right;">Est. Base Rate (Rs.)</th>
                                 <th style="padding: 6px 10px; border: 1px solid #000; text-align:center;">Numbers</th>
-                                <th style="padding: 6px 10px; border: 1px solid #000; text-align:right;">Total Rate (₹)</th>
+                                <th style="padding: 6px 10px; border: 1px solid #000; text-align:right;">Total Rate (Rs.)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -710,7 +710,7 @@ function setupEventListeners() {
                     </table>
                     <div style="font-weight: bold; background-color: #f3f4f6; padding: 10px; border: 1px solid #000; border-top: none; text-align: right; page-break-inside: avoid;">
                         <span style="margin-right: 20px;">Grand Total:</span>
-                        <span>₹${total.toLocaleString('en-IN')}</span>
+                        <span>Rs. ${total.toLocaleString('en-IN')}</span>
                     </div>
                 </div>
             `;
@@ -986,9 +986,9 @@ function generateQuotePDF(supplierIndex) {
 
     doc.autoTable({
         startY: y,
-        head: [['Sl.No', 'Item Description', 'Unit Rate (₹)', 'Qty', 'Amount (₹)']],
+        head: [['Sl.No', 'Item Description', 'Unit Rate (Rs.)', 'Qty', 'Amount (Rs.)']],
         body: tableBody,
-        foot: [['', '', '', { content: 'Grand Total:', styles: { halign: 'right', fontStyle: 'bold' } }, { content: '₹' + total.toLocaleString('en-IN'), styles: { halign: 'right', fontStyle: 'bold' } }]],
+        foot: [['', '', '', { content: 'Grand Total:', styles: { halign: 'right', fontStyle: 'bold' } }, { content: 'Rs. ' + total.toLocaleString('en-IN'), styles: { halign: 'right', fontStyle: 'bold' } }]],
         showFoot: 'lastPage',
         margin: { left: margin, right: margin },
         styles: { fontSize: 8.5, cellPadding: 3, overflow: 'linebreak' },
@@ -1080,9 +1080,9 @@ function viewQuoteHTML(supplierIndex) {
         <tr style="background: ${i % 2 === 0 ? '#fff' : '#f8fafc'};">
             <td style="text-align:center;">${row.sl}</td>
             <td>${row.name}</td>
-            <td style="text-align:right;">₹${row.rate.toLocaleString('en-IN')}</td>
+            <td style="text-align:right;">Rs. ${row.rate.toLocaleString('en-IN')}</td>
             <td style="text-align:center;">${row.qty}</td>
-            <td style="text-align:right;">₹${row.amount.toLocaleString('en-IN')}</td>
+            <td style="text-align:right;">Rs. ${row.amount.toLocaleString('en-IN')}</td>
         </tr>
     `).join('');
 
@@ -1144,9 +1144,9 @@ function viewQuoteHTML(supplierIndex) {
                     <tr>
                         <th style="width:6%; text-align:center;">Sl.No</th>
                         <th style="width:46%;">Item Description</th>
-                        <th style="width:16%; text-align:right;">Unit Rate (₹)</th>
+                        <th style="width:16%; text-align:right;">Unit Rate (Rs.)</th>
                         <th style="width:10%; text-align:center;">Qty</th>
-                        <th style="width:22%; text-align:right;">Amount (₹)</th>
+                        <th style="width:22%; text-align:right;">Amount (Rs.)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -1156,7 +1156,7 @@ function viewQuoteHTML(supplierIndex) {
                     <tr>
                         <td colspan="3"></td>
                         <td style="text-align:right;">Grand Total:</td>
-                        <td style="text-align:right;">₹${total.toLocaleString('en-IN')}</td>
+                        <td style="text-align:right;">Rs. ${total.toLocaleString('en-IN')}</td>
                     </tr>
                 </tfoot>
             </table>
@@ -1204,7 +1204,7 @@ function viewBOQHTML() {
                 <td>${master.name}</td>
                 ${prices.map(p => `
                     <td style="text-align:right; ${p === minPrice ? 'background: #dcfce7; font-weight: bold; color: #166534;' : ''}">
-                        ₹${p.toLocaleString('en-IN')}
+                        Rs. ${p.toLocaleString('en-IN')}
                     </td>
                 `).join('')}
             </tr>
@@ -1280,9 +1280,9 @@ function generateBOQPDF() {
         return [
             idx + 1,
             master.name,
-            { content: '₹' + prices[0].toLocaleString('en-IN'), styles: prices[0] === minPrice ? { fillColor: [220, 252, 231], fontStyle: 'bold' } : {} },
-            { content: '₹' + prices[1].toLocaleString('en-IN'), styles: prices[1] === minPrice ? { fillColor: [220, 252, 231], fontStyle: 'bold' } : {} },
-            { content: '₹' + prices[2].toLocaleString('en-IN'), styles: prices[2] === minPrice ? { fillColor: [220, 252, 231], fontStyle: 'bold' } : {} }
+            { content: 'Rs. ' + prices[0].toLocaleString('en-IN'), styles: prices[0] === minPrice ? { fillColor: [220, 252, 231], fontStyle: 'bold' } : {} },
+            { content: 'Rs. ' + prices[1].toLocaleString('en-IN'), styles: prices[1] === minPrice ? { fillColor: [220, 252, 231], fontStyle: 'bold' } : {} },
+            { content: 'Rs. ' + prices[2].toLocaleString('en-IN'), styles: prices[2] === minPrice ? { fillColor: [220, 252, 231], fontStyle: 'bold' } : {} }
         ];
     }).filter(row => row !== null);
 
@@ -1361,7 +1361,7 @@ function generateBillPDF() {
         if (!master) return null;
         const rate = Math.ceil(master.rate * varianceFn());
         const amount = rate * pItem.qty;
-        return [idx + 1, master.name, '₹' + rate.toLocaleString('en-IN'), pItem.qty, '₹' + amount.toLocaleString('en-IN')];
+        return [idx + 1, master.name, 'Rs. ' + rate.toLocaleString('en-IN'), pItem.qty, 'Rs. ' + amount.toLocaleString('en-IN')];
     }).filter(row => row !== null);
 
     // 4. Generate PDF
@@ -1413,7 +1413,7 @@ function generateBillPDF() {
     doc.setFont('helvetica', 'bold');
     doc.text('Quoted Total:', pageW - margin - 50, finalY);
     doc.setFont('helvetica', 'normal');
-    doc.text('₹' + quotedTotal.toLocaleString('en-IN'), pageW - margin, finalY, { align: 'right' });
+    doc.text('Rs. ' + quotedTotal.toLocaleString('en-IN'), pageW - margin, finalY, { align: 'right' });
     finalY += 6;
 
     if (lessAmount > 0) {
@@ -1421,7 +1421,7 @@ function generateBillPDF() {
         doc.setTextColor(220, 38, 38); // Red color for deduction
         doc.text('Less Amount:', pageW - margin - 50, finalY);
         doc.setFont('helvetica', 'normal');
-        doc.text('- ₹' + lessAmount.toLocaleString('en-IN'), pageW - margin, finalY, { align: 'right' });
+        doc.text('- Rs. ' + lessAmount.toLocaleString('en-IN'), pageW - margin, finalY, { align: 'right' });
         finalY += 8;
         doc.setTextColor(0);
     }
@@ -1432,7 +1432,7 @@ function generateBillPDF() {
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.text('Grand Total:', pageW - margin - 50, finalY);
-    doc.text('₹' + finalTotal.toLocaleString('en-IN'), pageW - margin, finalY, { align: 'right' });
+    doc.text('Rs. ' + finalTotal.toLocaleString('en-IN'), pageW - margin, finalY, { align: 'right' });
 
     // Footer
     finalY += 20;
