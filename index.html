@@ -211,6 +211,8 @@
                         <button id="btn-print-purchase" class="btn secondary">🖨️ Print for Purchase</button>
                         <button id="btn-print-intend" class="btn secondary">🖨️ Print List for Intend</button>
                         <button id="btn-pdf-purchase" class="btn secondary">📥 PDF for Purchase</button>
+                        <button id="btn-view-boq" class="btn secondary" style="background: rgba(236, 72, 153, 0.1); border-color: rgba(236, 72, 153, 0.4);">📊 View BOQ</button>
+                        <button id="btn-pdf-boq" class="btn secondary" style="background: rgba(236, 72, 153, 0.1); border-color: rgba(236, 72, 153, 0.4);">📉 PDF BOQ</button>
                         <div style="display: inline-flex; gap: 8px; flex-wrap: wrap; margin-left: auto; align-items: center;">
                             <button id="btn-gen-q1" class="btn generate"
                                 style="background: linear-gradient(135deg, #0284c7, #0369a1); border: none;">📄 PDF Q1</button>
@@ -266,6 +268,26 @@
                             <option value="numbers">Adjust Quantities</option>
                         </select>
                         <button id="btn-adjust-total" class="btn generate" style="background: linear-gradient(135deg, #f59e0b, #d97706); border: none;">Adjust Total</button>
+                    </div>
+                </div>
+
+                <!-- Bill Generation Pane -->
+                <div class="selection-pane glass-panel" style="margin-bottom: 30px; padding: 20px; border-left: 4px solid #10b981;">
+                    <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <div>
+                            <h3 style="margin: 0;">Final Bill Generation</h3>
+                            <p style="margin: 0; font-size: 0.8em; color: #94a3b8; margin-top: 5px;">Generate a formal bill for the lowest quoted vendor</p>
+                        </div>
+                        <div id="display-lowest-vendor-info" style="text-align: right; font-size: 0.85em; color: #94a3b8;">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 200px;">
+                            <label style="display:block; margin-bottom:5px; font-size:0.8em; color:#94a3b8;">Final Agreed Amount (Optional)</label>
+                            <input type="number" id="input-final-bill-amount" placeholder="Agreed Total ₹" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color: white;">
+                        </div>
+                        <button id="btn-generate-bill" class="btn generate" style="background: linear-gradient(135deg, #10b981, #059669); border: none; align-self: flex-end; padding: 12px 25px;">🧾 Generate Bill</button>
                     </div>
                 </div>
 

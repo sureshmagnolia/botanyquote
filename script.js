@@ -156,6 +156,33 @@ function renderProposalList() {
     if (displayTotal) {
         displayTotal.innerText = `₹${currentTotal.toLocaleString('en-IN')}`;
     }
+    updateLowestVendorDisplay();
+}
+
+function updateLowestVendorDisplay() {
+    const infoDiv = document.getElementById('display-lowest-vendor-info');
+    if (!infoDiv) return;
+
+    if (proposalItems.length === 0) {
+        infoDiv.innerHTML = '';
+        return;
+    }
+
+    const suppliers = [quoteSettings.v1, quoteSettings.v2, quoteSettings.v3];
+    let totals = suppliers.map(s => {
+        let total = 0;
+        proposalItems.forEach(pItem => {
+            const master = masterList.find(m => m.id === pItem.item_id);
+            if (master) total += Math.ceil(master.rate * (1 + (s.percent / 100))) * pItem.qty;
+        });
+        return total;
+    });
+
+    const minTotal = Math.min(...totals);
+    const minIdx = totals.indexOf(minTotal);
+    const bestVendor = suppliers[minIdx];
+
+    infoDiv.innerHTML = `Lowest: <strong style="color: #10b981">${bestVendor.name}</strong><br>Total: <strong>₹${minTotal.toLocaleString('en-IN')}</strong>`;
 }
 
 window.updateProposalQty = function (id, newQty) {
@@ -763,6 +790,31 @@ function setupEventListeners() {
     handleQuoteView('btn-view-q1', 0);
     handleQuoteView('btn-view-q2', 1);
     handleQuoteView('btn-view-q3', 2);
+
+    // BOQ Buttons
+    document.getElementById('btn-view-boq').addEventListener('click', () => {
+        if (proposalItems.length === 0) {
+            alert("Please add items to your proposal first.");
+            return;
+        }
+        viewBOQHTML();
+    });
+
+    document.getElementById('btn-pdf-boq').addEventListener('click', () => {
+        if (proposalItems.length === 0) {
+            alert("Please add items to your proposal first.");
+            return;
+        }
+        generateBOQPDF();
+    });
+
+    document.getElementById('btn-generate-bill').addEventListener('click', () => {
+        if (proposalItems.length === 0) {
+            alert("Please add items to your proposal first.");
+            return;
+        }
+        generateBillPDF();
+    });
 }
 
 
@@ -1129,6 +1181,267 @@ function viewQuoteHTML(supplierIndex) {
     win.document.open();
     win.document.write(htmlContent);
     win.document.close();
+}
+
+// ============================================================
+// Feature 4: BOQ Comparison Table (HTML & PDF)
+// ============================================================
+function viewBOQHTML() {
+    const displayDate = formatQuoteDate(quoteSettings.quoteDate);
+    const suppliers = [quoteSettings.v1, quoteSettings.v2, quoteSettings.v3];
+
+    let tableRows = '';
+    proposalItems.forEach((pItem, idx) => {
+        const master = masterList.find(m => m.id === pItem.item_id);
+        if (!master) return;
+
+        const prices = suppliers.map(s => Math.ceil(master.rate * (1 + (s.percent / 100))));
+        const minPrice = Math.min(...prices);
+
+        tableRows += `
+            <tr style="background: ${idx % 2 === 0 ? '#fff' : '#f8fafc'};">
+                <td style="text-align:center;">${idx + 1}</td>
+                <td>${master.name}</td>
+                ${prices.map(p => `
+                    <td style="text-align:right; ${p === minPrice ? 'background: #dcfce7; font-weight: bold; color: #166534;' : ''}">
+                        ₹${p.toLocaleString('en-IN')}
+                    </td>
+                `).join('')}
+            </tr>
+        `;
+    });
+
+    const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BOQ Comparison Table</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f8fafc; padding: 40px; color: #1e293b; }
+        .doc { max-width: 1000px; margin: 0 auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border-top: 6px solid #ec4899; }
+        h1 { text-align: center; margin-bottom: 5px; color: #0f172a; }
+        p.subtitle { text-align: center; color: #64748b; margin-bottom: 30px; font-size: 0.9em; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9em; }
+        th { background: #f1f5f9; color: #475569; padding: 12px; text-align: left; border: 1px solid #cbd5e1; font-weight: 600; text-transform: uppercase; font-size: 0.75em; letter-spacing: 0.5px; }
+        td { padding: 10px 12px; border: 1px solid #cbd5e1; }
+        .legend { margin-top: 20px; font-size: 0.8em; color: #64748b; display: flex; align-items: center; gap: 8px; }
+        .legend-box { width: 14px; height: 14px; background: #dcfce7; border: 1px solid #86efac; border-radius: 3px; }
+        @media print { .no-print { display: none; } body { padding: 0; } .doc { box-shadow: none; border: none; } }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="text-align:center; margin-bottom: 20px;">
+        <button onclick="window.print()" style="padding: 10px 24px; background: #ec4899; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">🖨️ Print BOQ Table</button>
+    </div>
+    <div class="doc">
+        <h1>BOQ Comparison Statement</h1>
+        <p class="subtitle">Comparison of rates across multiple vendors for proposed items | Date: ${displayDate}</p>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 50px; text-align:center;">Sl.No</th>
+                    <th>Item Description</th>
+                    <th>${quoteSettings.v1.name} (V1)</th>
+                    <th>${quoteSettings.v2.name} (V2)</th>
+                    <th>${quoteSettings.v3.name} (V3)</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${tableRows}
+            </tbody>
+        </table>
+        <div class="legend">
+            <div class="legend-box"></div>
+            <span>Highlighted cells indicate the <strong>lowest available rate</strong> for that item.</span>
+        </div>
+    </div>
+</body>
+</html>`;
+
+    const win = window.open('', '_blank');
+    win.document.open();
+    win.document.write(htmlContent);
+    win.document.close();
+}
+
+function generateBOQPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'landscape' }); // Landscape better for 5 cols
+    const displayDate = formatQuoteDate(quoteSettings.quoteDate);
+    const suppliers = [quoteSettings.v1, quoteSettings.v2, quoteSettings.v3];
+
+    const tableBody = proposalItems.map((pItem, idx) => {
+        const master = masterList.find(m => m.id === pItem.item_id);
+        if (!master) return null;
+
+        const prices = suppliers.map(s => Math.ceil(master.rate * (1 + (s.percent / 100))));
+        const minPrice = Math.min(...prices);
+
+        return [
+            idx + 1,
+            master.name,
+            { content: '₹' + prices[0].toLocaleString('en-IN'), styles: prices[0] === minPrice ? { fillColor: [220, 252, 231], fontStyle: 'bold' } : {} },
+            { content: '₹' + prices[1].toLocaleString('en-IN'), styles: prices[1] === minPrice ? { fillColor: [220, 252, 231], fontStyle: 'bold' } : {} },
+            { content: '₹' + prices[2].toLocaleString('en-IN'), styles: prices[2] === minPrice ? { fillColor: [220, 252, 231], fontStyle: 'bold' } : {} }
+        ];
+    }).filter(row => row !== null);
+
+    const pageW = doc.internal.pageSize.getWidth();
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(15, 23, 42);
+    doc.text('BOQ Comparison Statement', pageW / 2, 15, { align: 'center' });
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.text(`Generated on: ${displayDate} | Comparison of 3 Vendors`, pageW / 2, 22, { align: 'center' });
+
+    doc.autoTable({
+        startY: 30,
+        head: [['Sl.No', 'Item Description', quoteSettings.v1.name, quoteSettings.v2.name, quoteSettings.v3.name]],
+        body: tableBody,
+        margin: { left: 14, right: 14 },
+        styles: { fontSize: 8.5, cellPadding: 3, overflow: 'linebreak', halign: 'left' },
+        headStyles: { fillColor: [236, 72, 153], textColor: 255, fontStyle: 'bold' },
+        columnStyles: {
+            0: { halign: 'center', cellWidth: 15 },
+            2: { halign: 'right' },
+            3: { halign: 'right' },
+            4: { halign: 'right' }
+        },
+        didDrawPage: function(data) {
+            doc.setFontSize(8);
+            doc.setTextColor(150);
+            doc.text(`Page ${data.pageNumber}`, pageW / 2, doc.internal.pageSize.getHeight() - 8, { align: 'center' });
+        }
+    });
+
+    // Add legend after table
+    let finalY = doc.lastAutoTable.finalY + 10;
+    doc.setFillColor(220, 252, 231);
+    doc.rect(14, finalY, 4, 4, 'F');
+    doc.setDrawColor(134, 239, 172);
+    doc.rect(14, finalY, 4, 4, 'D');
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    doc.text('Highlighted cells indicate the lowest available unit rate for that item.', 20, finalY + 3);
+
+    doc.save(`BOQ_Comparison_${new Date().toISOString().split('T')[0]}.pdf`);
+}
+
+function generateBillPDF() {
+    const { jsPDF } = window.jspdf;
+    const suppliers = [quoteSettings.v1, quoteSettings.v2, quoteSettings.v3];
+    const displayDate = formatQuoteDate(quoteSettings.quoteDate);
+
+    // 1. Find Lowest Vendor
+    let totals = suppliers.map(s => {
+        let total = 0;
+        proposalItems.forEach(pItem => {
+            const master = masterList.find(m => m.id === pItem.item_id);
+            if (master) total += Math.ceil(master.rate * (1 + (s.percent / 100))) * pItem.qty;
+        });
+        return total;
+    });
+
+    const quotedTotal = Math.min(...totals);
+    const minIdx = totals.indexOf(quotedTotal);
+    const supplier = suppliers[minIdx];
+
+    // 2. Get Final Agreed Amount
+    const finalInput = document.getElementById('input-final-bill-amount').value;
+    const finalTotal = finalInput ? parseFloat(finalInput) : quotedTotal;
+    const lessAmount = quotedTotal - finalTotal;
+
+    // 3. Prepare Table Data
+    const varianceFn = () => 1 + (supplier.percent / 100);
+    const tableBody = proposalItems.map((pItem, idx) => {
+        const master = masterList.find(m => m.id === pItem.item_id);
+        if (!master) return null;
+        const rate = Math.ceil(master.rate * varianceFn());
+        const amount = rate * pItem.qty;
+        return [idx + 1, master.name, '₹' + rate.toLocaleString('en-IN'), pItem.qty, '₹' + amount.toLocaleString('en-IN')];
+    }).filter(row => row !== null);
+
+    // 4. Generate PDF
+    const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const margin = 14;
+
+    // Header
+    doc.setFillColor(15, 23, 42); // Dark headers for bills
+    doc.rect(0, 0, pageW, 25, 'F');
+    doc.setFontSize(18);
+    doc.setTextColor(255);
+    doc.text('TAX INVOICE / BILL', margin, 16);
+    
+    doc.setFontSize(9);
+    doc.setTextColor(200);
+    doc.text(supplier.name, pageW - margin, 14, { align: 'right' });
+    doc.text(supplier.addr, pageW - margin, 19, { align: 'right' });
+
+    doc.setTextColor(0);
+    doc.setFontSize(9);
+    doc.text(`Date: ${displayDate}`, margin, 35);
+    doc.text(`Quote Ref: ${supplier.ref || 'BILL'}-${new Date().getFullYear()}`, margin, 40);
+
+    // To address
+    doc.setFont('helvetica', 'bold');
+    doc.text('Bill To:', margin, 50);
+    doc.setFont('helvetica', 'normal');
+    doc.text(['The Principal,', 'Government Victoria College, Palakkad.'], margin, 55);
+
+    doc.autoTable({
+        startY: 65,
+        head: [['Sl.No', 'Item Description', 'Unit Rate', 'Qty', 'Amount']],
+        body: tableBody,
+        theme: 'grid',
+        styles: { fontSize: 9, cellPadding: 3 },
+        headStyles: { fillColor: [240, 240, 240], textColor: 0, fontStyle: 'bold' },
+        columnStyles: {
+            0: { halign: 'center', cellWidth: 12 },
+            2: { halign: 'right' },
+            3: { halign: 'center', cellWidth: 15 },
+            4: { halign: 'right' }
+        }
+    });
+
+    let finalY = doc.lastAutoTable.finalY + 5;
+
+    // Summary lines
+    doc.setFont('helvetica', 'bold');
+    doc.text('Quoted Total:', pageW - margin - 50, finalY);
+    doc.setFont('helvetica', 'normal');
+    doc.text('₹' + quotedTotal.toLocaleString('en-IN'), pageW - margin, finalY, { align: 'right' });
+    finalY += 6;
+
+    if (lessAmount > 0) {
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(220, 38, 38); // Red color for deduction
+        doc.text('Less Amount:', pageW - margin - 50, finalY);
+        doc.setFont('helvetica', 'normal');
+        doc.text('- ₹' + lessAmount.toLocaleString('en-IN'), pageW - margin, finalY, { align: 'right' });
+        finalY += 8;
+        doc.setTextColor(0);
+    }
+
+    doc.setLineWidth(0.5);
+    doc.line(pageW - margin - 60, finalY - 4, pageW - margin, finalY - 4);
+    
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Grand Total:', pageW - margin - 50, finalY);
+    doc.text('₹' + finalTotal.toLocaleString('en-IN'), pageW - margin, finalY, { align: 'right' });
+
+    // Footer
+    finalY += 20;
+    doc.setFontSize(9);
+    doc.text('For ' + supplier.name, pageW - margin, finalY, { align: 'right' });
+    doc.setFont('helvetica', 'normal');
+    doc.text('Authorized Signatory', pageW - margin, finalY + 15, { align: 'right' });
+
+    doc.save(`Bill_${supplier.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`);
 }
 
 // ============================================================
